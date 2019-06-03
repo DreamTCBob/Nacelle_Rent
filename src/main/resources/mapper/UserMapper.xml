@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.manager.nacelle_rent.dao.UserMapper">
+    <resultMap id="userResultMap" type="com.manager.nacelle_rent.entity.User">
+        <result property="userId" column="user_id" />
+        <result property="userPassword" column="user_password" />
+        <result property="userRole" column="role_id" />
+        <result property="userPerm" column="perm_id" />
+        <result property="userName" column="user_name" />
+        <result property="userPhone" column="user_phone" />
+        <result property="userImage" column="user_image" />
+        <result property="isChecked" column="isChecked" />
+        <result property="createDate" column="create_date" />
+    </resultMap>
+    <resultMap id="simpleUserResultMap" type="com.manager.nacelle_rent.entity.SimpleUser">
+        <result property="userId" column="user_id" />
+        <result property="userName" column="user_name" />
+    </resultMap>
+
+    <select id="getUserById" resultMap="userResultMap" parameterType="String">
+        SELECT user_id, user_password, role_id, user_name
+        FROM user_info
+        WHERE  user_id= #{userId}
+    </select>
+
+    <select id="getUserInfo" resultMap="userResultMap" parameterType="String">
+        SELECT *
+        FROM user_info
+        WHERE  user_id= #{userId}
+    </select>
+
+    <select id="getNameById" resultMap="simpleUserResultMap" parameterType="String">
+        SELECT user_id,user_name
+        FROM user_info
+        WHERE  user_id= #{userId}
+    </select>
+
+    <select id="getUserByPhone" resultMap="userResultMap" parameterType="String">
+        SELECT *
+        FROM user_info
+        WHERE  user_phone= #{userPhone}
+    </select>
+
+    <select id="getUserPhoneDepartment" resultMap="userResultMap" parameterType="String">
+        SELECT *
+        FROM   user_info
+        WHERE  INSTR(user_phone,#{userPhone}) > 0
+    </select>
+
+    <select id="getUserNameDepartment" resultMap="userResultMap" parameterType="String">
+        SELECT *
+        FROM   user_info
+        WHERE  INSTR(user_name,#{userPhone}) > 0
+    </select>
+
+    <select id="getMinId" resultMap="userResultMap">
+        SELECT user_id
+        FROM user_info
+        ORDER BY user_id ASC LIMIT 1
+    </select>
+
+    <select id="getAllAreaAdmin" resultMap="userResultMap">
+        SELECT user_id, user_name
+        FROM user_info
+        WHERE role_id = "areaAdmin"
+    </select>
+
+    <select id="getAllRentAdmin" resultMap="userResultMap">
+        SELECT user_id, user_name
+        FROM user_info
+        WHERE role_id = "rentAdmin"
+    </select>
+
+    <insert id="registerUser" parameterType="com.manager.nacelle_rent.entity.User">
+        INSERT INTO
+        user_info(user_id, user_name, user_password, role_id, user_phone, user_image)
+        VALUES (#{userId}, #{userName}, #{userPassword}, #{userRole}, #{userPhone}, #{userImage})
+    </insert>
+
+    <select id="getRegisterUnChecked" resultMap="userResultMap">
+        SELECT user_id, user_name, user_phone, user_image, create_date, role_id
+        FROM user_info
+        WHERE isChecked = 0
+    </select>
+
+    <select id="getAllAccount" resultMap="userResultMap">
+        SELECT user_id, user_name, user_phone, user_image, role_id
+        FROM user_info
+        WHERE isChecked = true
+    </select>
+
+    <select id="getRegisterUnCheckedNum" resultType="int">
+        SELECT COUNT(*) AS num
+        FROM user_info
+        WHERE isChecked = false ;
+    </select>
+
+    <delete id="deleteUser">
+        DELETE FROM user_info
+        WHERE user_id in
+        <foreach collection="array" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <update id="updateRegisterState">
+        UPDATE user_info
+        SET isChecked = 1
+        WHERE  user_id in
+        <foreach collection="array" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateQualifications">
+        UPDATE user_info
+        SET perm_id = #{qualificationImage}
+        WHERE  user_id = #{userId}
+    </update>
+
+    <insert id="createWebAdmin">
+        INSERT INTO user_info(role_id,user_name,user_password,user_id,user_phone,isChecked)
+        VALUES(#{userRole},#{userName},#{userPassword},#{userId},#{userPhone},#{isChecked})
+    </insert>
+
+    <insert id="createProjectAdmin">
+        INSERT INTO project_admin(project_id,user_id)
+        VALUES(#{projectId},#{userId})
+    </insert>
+
+    <select id="judgeProAdmin" resultType="String">
+        SELECT project_id
+        FROM project_admin
+        WHERE user_id = #{userId}
+    </select>
+</mapper>

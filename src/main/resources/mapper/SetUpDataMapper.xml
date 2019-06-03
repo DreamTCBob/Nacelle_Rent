@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.manager.nacelle_rent.dao.SetUpDataMapper">
+
+    <resultMap id="setUpDataResultMap" type="com.manager.nacelle_rent.entity.SetUpData">
+        <result property="device_id" column="device_id" />
+        <result property="overweight_current" column="overweight_current" />
+        <result property="angle_upperlimit" column="angle_upperlimit"/>
+        <result property="angle_lowerlimit" column="angle_lowerlimit"/>
+        <result property="interval_snapshot" column="interval_snapshot"/>
+        <result property="state" column="state"/>
+    </resultMap>
+
+    <select id="updateSetUpData" parameterType="com.manager.nacelle_rent.entity.SetUpData">
+        INSERT INTO electricbox_setupdata(device_id,overweight_current,angle_upperlimit,angle_lowerlimit,interval_snapshot,state)
+        VALUES (#{device_id},#{overweight_current},#{angle_upperlimit},#{angle_lowerlimit},#{interval_snapshot},#{state})
+        ON DUPLICATE KEY UPDATE
+        overweight_current=VALUES(overweight_current),angle_upperlimit= VALUES(angle_upperlimit),angle_lowerlimit=VALUES(angle_lowerlimit),interval_snapshot=VALUES(interval_snapshot),state=VALUES(state)
+    </select>
+
+    <select id="getSetUpData" resultMap="setUpDataResultMap" parameterType="String">
+        SELECT *
+        FROM   electricbox_setupdata
+        WHERE  device_id= #{device_id}
+    </select>
+
+    <select id="getState" resultType="int" parameterType="String">
+        SELECT state
+        FROM   electricbox_setupdata
+        WHERE  device_id= #{device_id}
+    </select>
+
+    <update id="updateState">
+        UPDATE electricbox_setupdata
+        SET state = #{state}
+        WHERE device_id= #{device_id}
+    </update>
+
+    <delete id="deleteSetUpData">
+        DELETE FROM electricbox_setupdata
+        WHERE device_id = #{device_id}
+    </delete>
+
+</mapper>

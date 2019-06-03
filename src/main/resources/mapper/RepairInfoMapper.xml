@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.manager.nacelle_rent.dao.RepairInfoMapper">
+
+    <resultMap id="setUpDataResultMap" type="com.manager.nacelle_rent.entity.RepairBoxInfo">
+        <result property="deviceId" column="device_id" />
+        <result property="id" column="id" />
+        <result property="date" column="date"/>
+        <result property="projectId" column="project_id"/>
+        <result property="managerId" column="manager_id"/>
+        <result property="reason" column="reason"/>
+        <result property="image" column="image"/>
+    </resultMap>
+
+    <select id="createRepairBox" parameterType="com.manager.nacelle_rent.entity.RepairBoxInfo">
+        INSERT INTO repair_info(device_id,project_id,manager_id,reason,image)
+        VALUES (#{deviceId},#{projectId},#{managerId},#{reason},#{image})
+        ON DUPLICATE KEY UPDATE
+        device_id=VALUES(device_id),project_id= VALUES(project_id),manager_id=VALUES(manager_id),reason=VALUES(reason),image=VALUES(image)
+    </select>
+
+    <select id="createRepairEndBox" parameterType="com.manager.nacelle_rent.entity.RepairBoxInfo">
+        INSERT INTO repair_end_info(device_id,project_id,manager_id,reason,image)
+        VALUES (#{deviceId},#{projectId},#{managerId},#{reason},#{image})
+        ON DUPLICATE KEY UPDATE
+        device_id=VALUES(device_id),project_id= VALUES(project_id),manager_id=VALUES(manager_id),reason=VALUES(reason),image=VALUES(image)
+    </select>
+
+    <select id="getRepairInfo" parameterType="com.manager.nacelle_rent.entity.RepairBoxInfo">
+        SELECT *
+        FROM repair_info
+        WHERE  device_id = #{deviceId}
+    </select>
+
+</mapper>

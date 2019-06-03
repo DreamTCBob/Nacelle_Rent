@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.manager.nacelle_rent.dao.ElectricResMapper">
+    <resultMap id="electricResResultMap" type="com.manager.nacelle_rent.entity.ElectricRes">
+        <result property="projectId" column="project_id" />
+        <result property="deviceId" column="device_id" />
+        <result property="projectBuilders" column="project_builders"/>
+        <result property="projectName" column="project_name"/>
+    </resultMap>
+    <select id="getElectricRes" resultMap="electricResResultMap" parameterType="String">
+        SELECT device_id, project_builders
+        FROM   electricbox_res
+        WHERE  project_id= #{projectId}
+    </select>
+    <select id="getElectricBoxState" resultMap="electricResResultMap" parameterType="String">
+        SELECT *
+        FROM   electricbox_res
+        WHERE  FIND_IN_SET(#{projectBuilders},project_builders)
+    </select>
+    <select id="getDeviceList" resultMap="electricResResultMap" parameterType="String">
+        SELECT device_id, electricbox_res.project_id,project_name,electricbox_res.project_builders
+        FROM   electricbox_res, project_info
+        WHERE  electricbox_res.project_id = project_info.project_id
+    </select>
+
+    <select id="getDevice" resultMap="electricResResultMap" parameterType="String">
+        SELECT *
+        FROM   electricbox_res
+        WHERE  device_id = #{deviceId}
+    </select>
+
+    <insert id="createWorkBox">
+        INSERT INTO electricbox_res(device_id,project_id,project_builders)
+        VALUES(#{deviceId},#{projectId},#{projectBuilders})
+    </insert>
+
+    <delete id="deleteWorkBox">
+        DELETE FROM electricbox_res
+        WHERE device_id = #{deviceId}
+    </delete>
+
+    <update id="updateWorker">
+        UPDATE electricbox_res
+        SET project_builders = #{projectBuilders}
+        WHERE device_id= #{deviceId}
+    </update>
+</mapper>

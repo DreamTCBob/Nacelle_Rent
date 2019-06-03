@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.manager.nacelle_rent.dao.PreStopMapper">
+    <resultMap id="preStopResultMap" type="com.manager.nacelle_rent.entity.PreStop">
+        <result property="id" column="id" />
+        <result property="date" column="date" />
+        <result property="days" column="days"/>
+        <result property="num" column="num"/>
+        <result property="projectId" column="project_id"/>
+    </resultMap>
+
+    <insert id="createPreStop">
+        INSERT INTO preStop(date,days,num,project_id)
+        VALUES(#{date},#{days},#{num},#{projectId})
+    </insert>
+
+    <delete id="deleteOutDate">
+        DELETE FROM preStop
+        WHERE #{dateNow} > preStop.date
+    </delete>
+
+    <select id="sum" resultType="int">
+        SELECT SUM(preStop.num)
+        FROM preStop
+        WHERE (preStop.date BETWEEN #{dateNow} AND #{dateAfter})
+    </select>
+
+    <select id="all" resultType="int">
+        SELECT SUM(preStop.num)
+        FROM preStop
+    </select>
+
+    <select id="getPreStopInfo" resultMap="preStopResultMap">
+        SELECT *
+        FROM preStop
+        WHERE (preStop.date BETWEEN #{dateNow} AND #{dateAfter})
+    </select>
+
+
+</mapper>

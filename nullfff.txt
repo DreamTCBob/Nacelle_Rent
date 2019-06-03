@@ -1,0 +1,29 @@
+<h1 style="text-align: center;">吊篮使用合同书</h1>
+<p style="text-align: center; font-size: 15px;"><img title="TinyMCE Logo" src="//www.tinymce.com/images/glyph-tinymce@2x.png" alt="TinyMCE Logo" width="110" height="97" /></p>
+<ul>
+<li>
+<p><strong>租方（甲方）：</strong></p>
+<p><strong>XXX</strong><strong>吊篮公司（乙方）：</strong></p>
+<p><span style="color: #a84343;">try againjjjjjj</span></p>
+<p>甲方于20XX年XX月XX日向乙方租借X个吊篮以完成XXXXXXX项目，故成立项目号：XXXXXXX。</p>
+<p>&nbsp;</p>
+<p>甲方须遵守：</p>
+<ol>
+<li>XXXXXXXX</li>
+<li>XXXXXXXX</li>
+</ol>
+<p>&hellip;&hellip;&hellip;&hellip;&hellip;..</p>
+<p>乙方须遵守：</p>
+<ol>
+<li>XXXXXXXX</li>
+<li>XXXXXXXX</li>
+</ol>
+<p>&hellip;&hellip;&hellip;&hellip;&hellip;..</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>甲方签字（盖章）： &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 乙方签字（盖章）：</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 年 &nbsp;&nbsp;月 &nbsp;&nbsp;日&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;年 &nbsp;&nbsp;月 &nbsp;&nbsp;日</p>
+</li>
+</ul>

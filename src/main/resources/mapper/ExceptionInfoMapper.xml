@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.manager.nacelle_rent.dao.ExceptionInfoMapper">
+
+    <resultMap id="setUpDataResultMap" type="com.manager.nacelle_rent.entity.ExceptionBoxInfo">
+        <result property="deviceId" column="device_id" />
+        <result property="id" column="id" />
+        <result property="date" column="date"/>
+        <result property="projectId" column="project_id"/>
+        <result property="managerId" column="manager_id"/>
+        <result property="reason" column="reason"/>
+    </resultMap>
+
+    <select id="createExceptionBox" parameterType="com.manager.nacelle_rent.entity.ExceptionBoxInfo">
+        INSERT INTO exception_info(device_id,project_id,manager_id,reason)
+        VALUES (#{deviceId},#{projectId},#{managerId},#{reason})
+        ON DUPLICATE KEY UPDATE
+        device_id=VALUES(device_id),project_id= VALUES(project_id),manager_id=VALUES(manager_id),reason=VALUES(reason)
+    </select>
+
+
+</mapper>
