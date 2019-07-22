@@ -1,0 +1,7 @@
+2019-01-20 10:06:37,041 [http-nio-8080-exec-9] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2019-01-20 10:06:54,148 [http-nio-8080-exec-9] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2019-01-20 10:07:51,574 [http-nio-8080-exec-3] INFO  [com.manager.nacelle_rent.controller.LoginController] - common 登录
+2019-01-20 10:08:14,800 [http-nio-8080-exec-9] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2019-01-20 12:07:32,350 [http-nio-80-exec-1] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2019-01-20 12:08:23,542 [http-nio-80-exec-9] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2019-01-20 12:17:55,889 [http-nio-80-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录

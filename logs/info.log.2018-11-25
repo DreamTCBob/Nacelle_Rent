@@ -1,0 +1,26 @@
+2018-11-25 20:24:21,469 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - 推送消息到窗口superWebAdmin，推送内容:{"userImage":"...","userPhone":"18795883601","userName":"小猪弟弟","userId":"66535856"}
+2018-11-25 20:24:25,072 [http-nio-8080-exec-3] INFO  [com.manager.nacelle_rent.controller.LoginController] - 推送消息到窗口superWebAdmin，推送内容:{"userImage":"...","userPhone":"18795883601","userName":"小猪弟弟","userId":"66535812"}
+2018-11-25 20:28:38,784 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-25 20:28:49,622 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"66535812","handleResult":"refuse"}
+2018-11-25 20:28:52,762 [http-nio-8080-exec-9] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"66535856","handleResult":"refuse"}
+2018-11-25 20:28:53,818 [http-nio-8080-exec-10] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"6655435856","handleResult":"refuse"}
+2018-11-25 20:28:58,554 [http-nio-8080-exec-1] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"6h36668","handleResult":"refuse"}
+2018-11-25 20:28:59,066 [http-nio-8080-exec-3] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"6h3665568","handleResult":"refuse"}
+2018-11-25 20:28:59,226 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"6h321dd6ff668","handleResult":"refuse"}
+2018-11-25 20:28:59,394 [http-nio-8080-exec-4] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"6h321dd6ff6668","handleResult":"refuse"}
+2018-11-25 20:28:59,570 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"6h321dd6668","handleResult":"refuse"}
+2018-11-25 20:28:59,746 [http-nio-8080-exec-6] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"66887556","handleResult":"refuse"}
+2018-11-25 20:28:59,906 [http-nio-8080-exec-7] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"6686","handleResult":"refuse"}
+2018-11-25 20:29:00,090 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"66856","handleResult":"refuse"}
+2018-11-25 20:29:00,282 [http-nio-8080-exec-9] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"668556","handleResult":"refuse"}
+2018-11-25 20:29:00,450 [http-nio-8080-exec-10] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"668","handleResult":"refuse"}
+2018-11-25 20:29:01,970 [http-nio-8080-exec-1] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"66555856","handleResult":"refuse"}
+2018-11-25 20:29:02,754 [http-nio-8080-exec-3] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"6h3dd6668","handleResult":"pass"}
+2018-11-25 20:29:44,961 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - 有一连接关闭！当前在线人数为0
+2018-11-25 20:36:32,647 [http-nio-8080-exec-4] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-25 20:36:34,320 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-25 20:37:29,200 [http-nio-8080-exec-7] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-25 20:38:19,801 [http-nio-8080-exec-1] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-25 20:38:29,559 [http-nio-8080-exec-6] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-25 20:38:35,636 [http-nio-8080-exec-9] INFO  [com.manager.nacelle_rent.controller.LoginController] - 有一连接关闭！当前在线人数为1
+2018-11-25 20:38:38,075 [http-nio-8080-exec-10] INFO  [com.manager.nacelle_rent.controller.LoginController] - 有一连接关闭！当前在线人数为0

@@ -1,0 +1,4 @@
+2019-03-27 19:15:58,701 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.UserController] - 9999,0 登录
+2019-03-27 19:19:33,072 [http-nio-8080-exec-7] INFO  [com.manager.nacelle_rent.controller.UserController] - 18795883606,1 登录
+2019-03-27 19:30:45,019 [http-nio-8080-exec-6] INFO  [com.manager.nacelle_rent.controller.UserController] - 18795883606,1 登录
+2019-03-27 19:42:15,984 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.UserController] - 18795883606,1 登录

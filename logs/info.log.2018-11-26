@@ -1,0 +1,86 @@
+2018-11-26 10:00:28,842 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:01:14,573 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - 有一连接关闭！当前在线人数为0
+2018-11-26 10:01:15,188 [http-nio-8080-exec-7] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:05:15,530 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:06:27,935 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:06:57,790 [http-nio-8080-exec-1] INFO  [com.manager.nacelle_rent.controller.LoginController] - 有一连接关闭！当前在线人数为0
+2018-11-26 10:06:58,141 [http-nio-8080-exec-3] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:14:07,162 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:21:09,699 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:31:49,917 [http-nio-8080-exec-7] INFO  [com.manager.nacelle_rent.controller.LoginController] - 有一连接关闭！当前在线人数为0
+2018-11-26 10:31:50,164 [http-nio-8080-exec-9] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:34:53,989 [http-nio-8080-exec-3] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:35:16,333 [http-nio-8080-exec-7] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:36:19,725 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:36:32,318 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:37:12,643 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:37:41,935 [http-nio-8080-exec-1] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:38:36,166 [http-nio-8080-exec-3] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:41:07,112 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:41:36,924 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - 有一连接关闭！当前在线人数为0
+2018-11-26 10:41:37,099 [http-nio-8080-exec-7] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:54:35,470 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:56:47,961 [http-nio-8080-exec-3] INFO  [com.manager.nacelle_rent.controller.LoginController] - 有一连接关闭！当前在线人数为0
+2018-11-26 10:56:48,166 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:56:56,187 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:57:25,758 [http-nio-8080-exec-1] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 10:58:21,897 [http-nio-8080-exec-4] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 11:01:54,232 [http-nio-8080-exec-9] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 11:14:56,750 [http-nio-8080-exec-4] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 11:15:28,352 [http-nio-8080-exec-7] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 11:16:23,738 [http-nio-8080-exec-10] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 11:18:43,429 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 11:19:35,640 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 11:27:55,539 [http-nio-8080-exec-3] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 11:30:03,623 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 11:30:12,562 [http-nio-8080-exec-1] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 11:30:42,526 [http-nio-8080-exec-4] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 11:30:46,635 [http-nio-8080-exec-7] INFO  [com.manager.nacelle_rent.controller.LoginController] - 收到来自窗口superWebAdmin的信息:{"userId":"6h333338","handleResult":"refuse"}
+2018-11-26 11:32:07,918 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - 有一连接关闭！当前在线人数为0
+2018-11-26 11:32:08,034 [http-nio-8080-exec-4] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 14:20:13,281 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 14:21:55,674 [http-nio-8080-exec-10] INFO  [com.manager.nacelle_rent.controller.LoginController] - 有一连接关闭！当前在线人数为0
+2018-11-26 14:21:55,873 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 14:22:37,098 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 15:43:35,248 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 15:46:34,058 [http-nio-8080-exec-10] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 15:48:06,720 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 15:53:14,212 [http-nio-8080-exec-10] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 15:54:00,203 [http-nio-8080-exec-3] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 16:03:29,461 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 16:15:37,682 [http-nio-8080-exec-3] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 16:47:57,333 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 16:54:02,475 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 16:57:11,332 [http-nio-8080-exec-7] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 16:58:24,576 [http-nio-8080-exec-4] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 16:59:11,523 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 16:59:55,135 [http-nio-8080-exec-6] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 17:02:37,434 [http-nio-8080-exec-1] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 17:04:11,357 [http-nio-8080-exec-3] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 17:04:19,368 [http-nio-8080-exec-7] INFO  [com.manager.nacelle_rent.controller.LoginController] - 有一连接关闭！当前在线人数为0
+2018-11-26 17:04:48,838 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 17:05:35,239 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 17:05:50,699 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 17:07:02,144 [http-nio-8080-exec-10] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 17:09:00,253 [http-nio-8080-exec-7] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 17:09:29,880 [http-nio-8080-exec-10] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 17:09:48,838 [http-nio-8080-exec-4] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 17:13:11,582 [http-nio-8080-exec-10] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 17:17:38,278 [http-nio-8080-exec-6] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 17:17:52,298 [http-nio-8080-exec-10] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 17:23:43,527 [http-nio-8080-exec-6] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 20:23:38,621 [http-nio-8080-exec-4] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 20:29:59,477 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 20:32:09,488 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 20:32:32,917 [http-nio-8080-exec-9] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 20:34:53,941 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 20:36:55,005 [http-nio-8080-exec-10] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 20:46:49,191 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 21:22:19,987 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 22:11:55,963 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 22:12:08,139 [http-nio-8080-exec-6] INFO  [com.manager.nacelle_rent.controller.LoginController] - 有一连接关闭！当前在线人数为0
+2018-11-26 22:12:42,965 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 22:13:32,514 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - 有一连接关闭！当前在线人数为0
+2018-11-26 22:13:32,794 [http-nio-8080-exec-7] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 22:13:42,439 [http-nio-8080-exec-10] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录
+2018-11-26 22:14:10,876 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.LoginController] - admin 登录

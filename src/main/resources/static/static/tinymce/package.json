@@ -1,0 +1,52 @@
+{
+  "_from": "tinymce",
+  "_id": "tinymce@4.9.0",
+  "_inBundle": false,
+  "_integrity": "sha512-hrPeCLXY/sVCo3i64CTW8P5xbDiEI8Uii/vWpcmQWAMhex6GWWd2U+L8WIMj5tKKGdfcIQAJfpfQthc/92bcKw==",
+  "_location": "/tinymce",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "tinymce",
+    "name": "tinymce",
+    "escapedName": "tinymce",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/tinymce/-/tinymce-4.9.0.tgz",
+  "_shasum": "29589a368c463db6deb5e3981f71e48e88753f7f",
+  "_spec": "tinymce",
+  "_where": "E:\\intelligent basket\\vue-admin-template",
+  "author": {
+    "name": "Ephox Corporation"
+  },
+  "bugs": {
+    "url": "https://github.com/tinymce/tinymce/issues"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
+  "description": "Web based JavaScript HTML WYSIWYG editor control.",
+  "homepage": "https://github.com/tinymce/tinymce-dist#readme",
+  "keywords": [
+    "editor",
+    "wysiwyg",
+    "tinymce",
+    "richtext",
+    "javascript",
+    "html"
+  ],
+  "license": "LGPL-2.1",
+  "main": "tinymce.js",
+  "name": "tinymce",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tinymce/tinymce-dist.git"
+  },
+  "version": "4.9.0"
+}
