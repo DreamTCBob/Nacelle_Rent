@@ -10,9 +10,9 @@ import java.util.List;
 public interface ElectricResMapper {
     List<ElectricRes> getElectricRes(String projectId);
     List<ElectricRes> getDeviceList();
-    ElectricRes getDevice(String deviceId);
+    List<ElectricRes> getDevice(String deviceId);
     ElectricRes getElectricBoxState(String projectBuilders);
     void createWorkBox(@Param("deviceId") String deviceId, @Param("projectId") String projectId, @Param("projectBuilders") String projectBuilders);
-    void deleteWorkBox(@Param("deviceId") String deviceId);
+    void deleteWorkBox(@Param("userId") String userId);
     void updateWorker(@Param("deviceId") String deviceId, @Param("projectBuilders") String projectBuilders);
 }

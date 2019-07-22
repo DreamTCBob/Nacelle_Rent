@@ -12,30 +12,30 @@
     </resultMap>
 
     <insert id="createPreStop">
-        INSERT INTO preStop(date,days,num,project_id)
+        INSERT INTO prestop(date,days,num,project_id)
         VALUES(#{date},#{days},#{num},#{projectId})
     </insert>
 
     <delete id="deleteOutDate">
-        DELETE FROM preStop
-        WHERE #{dateNow} > preStop.date
+        DELETE FROM prestop
+        WHERE #{dateNow} > prestop.date
     </delete>
 
     <select id="sum" resultType="int">
-        SELECT SUM(preStop.num)
-        FROM preStop
-        WHERE (preStop.date BETWEEN #{dateNow} AND #{dateAfter})
+        SELECT SUM(prestop.num)
+        FROM prestop
+        WHERE (prestop.date BETWEEN #{dateNow} AND #{dateAfter})
     </select>
 
     <select id="all" resultType="int">
-        SELECT SUM(preStop.num)
-        FROM preStop
+        SELECT SUM(prestop.num)
+        FROM prestop
     </select>
 
     <select id="getPreStopInfo" resultMap="preStopResultMap">
         SELECT *
-        FROM preStop
-        WHERE (preStop.date BETWEEN #{dateNow} AND #{dateAfter})
+        FROM prestop
+        WHERE (prestop.date BETWEEN #{dateNow} AND #{dateAfter})
     </select>
 
 

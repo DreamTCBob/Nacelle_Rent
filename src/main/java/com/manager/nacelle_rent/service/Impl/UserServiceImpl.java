@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +74,19 @@ public class UserServiceImpl implements UserService {
         }
     }
     @Override
+    public String updatePassword(String userId, String oldPassword, String newPassword){
+        try {
+            User user = userMapper.getUserInfo(userId);
+            if(user.getUserPassword().equals(oldPassword)) {
+                userMapper.updatePassword(userId, newPassword);
+                return "success";
+            }else return "IncorrectPassword";
+        }catch (Exception e){
+            e.printStackTrace();
+            return "fail";
+        }
+    }
+    @Override
     public int registerAndroidUser(User user){
         if(userMapper.getUserByPhone(user.getUserPhone()) != null){
             return 0;  //用户名已经存在
@@ -103,6 +118,17 @@ public class UserServiceImpl implements UserService {
         if(userMapper.judgeProAdmin(userId)!=null)
             return 1;
         else return 0;
+    }
+    @Override
+    public int deleteUser(String userId){
+        try {
+            String[] deleteUser = new String[1];
+            deleteUser[0] = userId;
+            userMapper.deleteUser(deleteUser);
+            return 1;
+        }catch (Exception e){
+            return 0;
+        }
     }
     @Override
     public int updateQualifications(String userId, int picNum){
@@ -239,7 +265,7 @@ public class UserServiceImpl implements UserService {
                             try {
                                 storageList = storageList.replace(storeId + ",", "");
 //                                projectMapper.increaseBox(projectId, storageList);
-                                electricStateMapper.updateStateOut(storeId, 5);
+                                electricStateMapper.updateStateOut(storeId, 0);
                                 sendStorageToAlias(id);
                             }catch (Exception e){
                                 return false;
@@ -293,32 +319,38 @@ public class UserServiceImpl implements UserService {
     //////项目申请结束通过通知
     private void sendEndToAlias(String alias) throws Exception {
         Constants.useOfficial();
+        Map<String,String> map = new HashMap();
         Sender sender = new Sender(APP_SECRET_KEY);
         String messagePayload = "这是一条消息";
         String title = "项目结束申请";
         String description = "通过";
+        map.put("type","3");
         //alias非空白, 不能包含逗号, 长度小于128
         Message message = new Message.Builder()
                 .title(title)
                 .description(description).payload(messagePayload)
                 .restrictedPackageName(MY_PACKAGE_NAME)
                 .notifyType(-1)     // 使用默认提示音提示
+                .extra(map)
                 .build();
         sender.sendToAlias(message, alias, 3); //根据alias, 发送消息到指定设备上
     }
     //////吊篮入库申请同通过通知
     private void sendStorageToAlias(String alias) throws Exception {
         Constants.useOfficial();
+        Map<String,String> map = new HashMap();
         Sender sender = new Sender(APP_SECRET_KEY);
         String messagePayload = "这是一条消息";
         String title = "吊篮入库申请";
         String description = "通过";
+        map.put("type","3");
         //alias非空白, 不能包含逗号, 长度小于128
         Message message = new Message.Builder()
                 .title(title)
                 .description(description).payload(messagePayload)
                 .restrictedPackageName(MY_PACKAGE_NAME)
                 .notifyType(-1)     // 使用默认提示音提示
+                .extra(map)
                 .build();
         sender.sendToAlias(message, alias, 3); //根据alias, 发送消息到指定设备上
     }
@@ -373,17 +405,21 @@ public class UserServiceImpl implements UserService {
         sender.sendToAlias(message, alias, 3); //根据alias, 发送消息到指定设备上
     }
     @Override
-    public void sendRepairMessage(String projectId, String deviceId) throws Exception {
+    public void sendRepairMessage(String projectId, String deviceId, Timestamp startTime) throws Exception {
         Constants.useOfficial();
         Map<String,String> map = new HashMap<String, String>();
         Sender sender = new Sender(APP_SECRET_KEY);
         String alias = projectMapper.getProjectDetail(projectId) == null ? "" : projectMapper.getProjectDetail(projectId).getAdminProjectId();
+        String projectName = projectMapper.getProjectDetail(projectId) == null ? "" : projectMapper.getProjectDetail(projectId).getProjectName();
         String messagePayload = "这是一条消息";
         String title = "报修";
-        String description = "报修吊篮ID";
+        String description = "报修吊篮ID" + deviceId;
         //alias非空白, 不能包含逗号, 长度小于128
         map.put("type","4");
         map.put("deviceId",deviceId);
+        map.put("projectId",projectId);
+        map.put("time",startTime.toString());
+        map.put("projectName",projectName);
         Message message = new Message.Builder()
                 .title(title)
                 .description(description).payload(messagePayload)

@@ -494,4 +494,42 @@ public class UserController {
         }
         return jsonObject;
     }
+
+    /*
+    ///////////////////////////////////////7.21新增内容，修改密码
+     */
+    @ApiOperation(value = "修改密码" ,  notes="对所有人开放")
+    @PostMapping("/updatePassword")
+    public JSONObject updatePassword(HttpServletRequest request, @RequestParam String userId, @RequestParam String oldPassword, @RequestParam String newPassword){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            String result = userService.updatePassword(userId, oldPassword, newPassword);
+            jsonObject.put("result", result);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "删除用户" ,  notes="")
+    @PostMapping("/deleteUser")
+    public JSONObject deleteUser(HttpServletRequest request, @RequestParam String userId){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            int result = userService.deleteUser(userId);
+            if(result == 1)
+                jsonObject.put("delete","success");
+            else
+                jsonObject.put("delete","fail");
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
 }

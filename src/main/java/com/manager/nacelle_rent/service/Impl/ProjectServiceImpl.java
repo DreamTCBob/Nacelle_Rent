@@ -5,6 +5,7 @@ import com.manager.nacelle_rent.dao.*;
 import com.manager.nacelle_rent.entity.*;
 import com.manager.nacelle_rent.service.ProjectService;
 import com.manager.nacelle_rent.service.UserService;
+import com.manager.nacelle_rent.service.WorkTimeLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,8 @@ public class ProjectServiceImpl implements ProjectService{
     private PreStopMapper preStopMapper;
     @Autowired
     private ElectricStateMapper electricStateMapper;
+    @Autowired
+    private WorkTimeLogService workTimeLogService;
     @Autowired
     private ElectricBoxMapper electricBoxMapper;
     @Autowired
@@ -217,9 +220,9 @@ public class ProjectServiceImpl implements ProjectService{
 
     @Override
     public String getProjectId(String userId){
-        Project project = projectMapper.getProjectId(userId);
-        if(project!=null)
-            return project.getProjectId();
+        List<Project> project = projectMapper.getProjectId(userId);
+        if(project.size()!=0)
+            return project.get(0).getProjectId();
         else return "";
     }
 
@@ -483,47 +486,67 @@ public class ProjectServiceImpl implements ProjectService{
     public boolean beginWork(String projectId, String userId, String boxId){
         String userList = projectMapper.getProjectDetail(projectId).getWorker();
         String boxList = projectMapper.getProjectDetail(projectId).getBoxList();
-        String userNow;
-        if(electricResMapper.getDevice(boxId)!=null)
-            userNow = electricResMapper.getDevice(boxId).getProjectBuilders();
-        else userNow = "";
-        String[] userUpdate;
-        if(userList.contains(userId) && boxList.contains(boxId)){
-            if(electricResMapper.getDevice(boxId) == null) {////////////吊篮不在运行，更新吊篮运行时表
-                try {
-                    electricStateMapper.updateWorkState(boxId, 1);
-                    electricResMapper.createWorkBox(boxId, projectId, userId);
-                    return true;
-                } catch (Exception e) {
-                    return false;
-                }
-            }else{////////工人直接上吊篮，不用更新吊篮运行时表
-                userNow = userId + "," + userNow ;
-                userUpdate = userNow.split(",");
-                userNow = "";
-                for(int i = 0 ; i < userUpdate.length ; i++){
-                    if(!userUpdate[i].equals("") && !userNow.contains(userUpdate[i])){
-                        userNow += userUpdate[i] + ",";
-                    }
-                }try {
-                    electricResMapper.updateWorker(boxId, userNow);
-                    return true;
-                }catch (Exception e){
-                    return false;
-                }
+        String[] box = boxList.split(",");
+        int flag = 0;
+        for(String s : box){
+            if(s.equals(boxId))
+                flag = 1;
+        }
+//        String userNow;
+//        if(electricResMapper.getDevice(boxId)!=null)
+//            userNow = electricResMapper.getDevice(boxId).getProjectBuilders();
+//        else userNow = "";
+//        String[] userUpdate;
+        if(userList.contains(userId) && flag == 1){
+//            if(electricResMapper.getDevice(boxId) == null) {////////////吊篮不在运行，更新吊篮运行时表
+            try {
+                electricStateMapper.updateWorkState(boxId, 1);
+                electricResMapper.createWorkBox(boxId, projectId, userId);
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
             }
+//            }else{////////工人直接上吊篮，不用更新吊篮运行时表
+//                userNow = userId + "," + userNow ;
+//                userUpdate = userNow.split(",");
+//                userNow = "";
+//                for(int i = 0 ; i < userUpdate.length ; i++){
+//                    if(!userUpdate[i].equals("") && !userNow.contains(userUpdate[i])){
+//                        userNow += userUpdate[i] + ",";
+//                    }
+//                }try {
+//                    electricResMapper.updateWorker(boxId, userNow);
+//                    return true;
+//                }catch (Exception e){
+//                    return false;
+//                }
+//            }
         }
         else return false;
     }
     @Override
-    public boolean endWork(String projectId, String boxId){
+    public boolean endWork(String projectId, String userId, String boxId){
         String boxList = projectMapper.getProjectDetail(projectId).getBoxList();
+        Timestamp timeStart = electricResMapper.getElectricBoxState(userId) == null ? null : electricResMapper.getElectricBoxState(userId).getTimeStart();
+        long hour = 0;
+        if(timeStart != null) {
+            long nd = 1000 * 24 * 60 * 60;
+            long nh = 1000 * 60 * 60;
+            Date date = timeStart;
+            Date now = new Date();
+            long diff = now.getTime() - date.getTime();
+            hour = (diff % nd / nh) + 1;
+        }
         if(boxList.contains(boxId)){
-            try{
-                electricStateMapper.updateWorkState(boxId, 0);
-                electricResMapper.deleteWorkBox(boxId);
+            try {
+                electricResMapper.deleteWorkBox(userId);
+                if(electricResMapper.getDevice(boxId).size() == 0)
+                    electricStateMapper.updateWorkState(boxId, 0);
+                workTimeLogService.createWorkTimeLog(userId, projectId, boxId, hour);
                 return true;
-            }catch (Exception e){
+            } catch (Exception e) {
+                e.printStackTrace();
                 return false;
             }
         }
@@ -688,7 +711,7 @@ public class ProjectServiceImpl implements ProjectService{
     }
     @Override
     public int createRepairBox(Map<String, String> repair){
-        String image = "";
+        String imageStart = "";
         String deviceId = repair.get("deviceId");
         String projectId = repair.get("projectId");
         String reason = repair.get("reason");
@@ -697,15 +720,17 @@ public class ProjectServiceImpl implements ProjectService{
         repair.remove("projectId");
         repair.remove("reason");
         repair.remove("managerId");
+        Timestamp startTime = new Timestamp(new Date().getTime());
         for(int i = 0 ; i < repair.size() ; i++){
-            image += repair.get("pic" + "_" + (i+1)) + ",";
+            imageStart += repair.get("pic" + "_" + (i+1)) + ",";
         }
         try {
             if(projectId.equals(""))
                 return 2;///////吊篮不存在项目中
             if(electricStateMapper.getBoxLog(deviceId) == null)
                 return 3;///////吊兰已出库
-            repairInfoMapper.createRepairBox(deviceId,projectId,managerId,reason,image);
+            repairInfoMapper.createRepairBox(deviceId,projectId,managerId,reason,imageStart,startTime);
+            userService.sendRepairMessage(projectId,deviceId,startTime);
             return 0;
         }catch (Exception e){
             e.printStackTrace();
@@ -714,24 +739,26 @@ public class ProjectServiceImpl implements ProjectService{
     }
     @Override
     public int createRepairEndBox(Map<String, String> repair){
-        String image = "";
+        String imageEnd = "";
         String deviceId = repair.get("deviceId");
         String projectId = repair.get("projectId");
-        String reason = repair.get("reason");
-        String managerId = repair.get("managerId");
+        String description = repair.get("description");
+        String dealerId = repair.get("dealerId");
         repair.remove("deviceId");
         repair.remove("projectId");
-        repair.remove("reason");
-        repair.remove("managerId");
+        repair.remove("description");
+        repair.remove("dealerId");
+        Timestamp endTime = new Timestamp(new Date().getTime());
         for(int i = 0 ; i < repair.size() ; i++){
-            image += repair.get("pic" + "_" + (i+1)) + ",";
+            imageEnd += repair.get("pic" + "_" + (i+1)) + ",";
         }
         try {
             if(projectId.equals(""))
                 return 2;///////吊篮不存在项目中
             if(electricStateMapper.getBoxLog(deviceId) == null)
                 return 3;///////吊兰已出库
-            repairInfoMapper.createRepairEndBox(deviceId,projectId,managerId,reason,image);
+            repairInfoMapper.createRepairEndBox(deviceId,projectId,dealerId,description,imageEnd,endTime);
+//            repairInfoMapper.deleteRepairBox(deviceId);
             return 0;
         }catch (Exception e){
             e.printStackTrace();
@@ -739,8 +766,28 @@ public class ProjectServiceImpl implements ProjectService{
         }
     }
     @Override
-    public RepairBoxInfo getRepairBox(String deviceId){
-        return repairInfoMapper.getRepairInfo(deviceId);
+    public int deleteProject(String projectId){
+        try {
+            String[] deleteProject = new String[1];
+            deleteProject[0] = projectId;
+            projectMapper.deleteProject(deleteProject);
+            return 1;
+        }catch (Exception e){
+            e.printStackTrace();
+            return 0;
+        }
+    }
+    @Override
+    public List<RepairBoxInfo> getRepairBox(String projectId){
+        return repairInfoMapper.getRepairInfo(projectId);
+    }
+    @Override
+    public List<RepairBoxInfo> getRepairBoxOne(String deviceId){
+        return repairInfoMapper.getRepairInfoOne(deviceId);
+    }
+    @Override
+    public List<RepairBoxInfo> getRepairEndBoxOne(String deviceId){
+        return repairInfoMapper.getRepairEndInfoOne(deviceId);
     }
     @Override
     public ElectricBoxState getBoxLog(String boxId){
@@ -920,7 +967,7 @@ public class ProjectServiceImpl implements ProjectService{
     public int storageIn(String projectId, String deviceId){
         ElectricBoxState electricBoxState = electricStateMapper.getBoxLog(deviceId);
         if(electricBoxState != null) {
-            if(electricBoxState.getStorageState() == 5 || electricBoxState.getStorageState() == 1 ) {
+            if(electricBoxState.getStorageState() == 5 || electricBoxState.getStorageState() == 1 || electricBoxState.getStorageState() == 0) {
                 try {
                     Project project = projectMapper.getProjectDetail(projectId);
                     electricBoxMapper.deleteRealTimeDateById(deviceId);

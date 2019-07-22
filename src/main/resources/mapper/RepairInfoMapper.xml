@@ -4,34 +4,55 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.manager.nacelle_rent.dao.RepairInfoMapper">
 
-    <resultMap id="setUpDataResultMap" type="com.manager.nacelle_rent.entity.RepairBoxInfo">
+    <resultMap id="repairBoxMap" type="com.manager.nacelle_rent.entity.RepairBoxInfo">
         <result property="deviceId" column="device_id" />
         <result property="id" column="id" />
-        <result property="date" column="date"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
         <result property="projectId" column="project_id"/>
         <result property="managerId" column="manager_id"/>
+        <result property="dealerId" column="dealer_id"/>
         <result property="reason" column="reason"/>
-        <result property="image" column="image"/>
+        <result property="description" column="description"/>
+        <result property="imageStart" column="image_start"/>
+        <result property="imageEnd" column="image_end"/>
     </resultMap>
 
     <select id="createRepairBox" parameterType="com.manager.nacelle_rent.entity.RepairBoxInfo">
-        INSERT INTO repair_info(device_id,project_id,manager_id,reason,image)
-        VALUES (#{deviceId},#{projectId},#{managerId},#{reason},#{image})
+        INSERT INTO repair_info(device_id,project_id,manager_id,reason,image_start,start_time)
+        VALUES (#{deviceId},#{projectId},#{managerId},#{reason},#{imageStart},#{startTime})
         ON DUPLICATE KEY UPDATE
-        device_id=VALUES(device_id),project_id= VALUES(project_id),manager_id=VALUES(manager_id),reason=VALUES(reason),image=VALUES(image)
+        device_id=VALUES(device_id),project_id= VALUES(project_id),manager_id=VALUES(manager_id),reason=VALUES(reason),image_start=VALUES(image_start),start_time=VALUES(start_time)
     </select>
 
-    <select id="createRepairEndBox" parameterType="com.manager.nacelle_rent.entity.RepairBoxInfo">
-        INSERT INTO repair_end_info(device_id,project_id,manager_id,reason,image)
-        VALUES (#{deviceId},#{projectId},#{managerId},#{reason},#{image})
-        ON DUPLICATE KEY UPDATE
-        device_id=VALUES(device_id),project_id= VALUES(project_id),manager_id=VALUES(manager_id),reason=VALUES(reason),image=VALUES(image)
+    <!--<select id="createRepairEndBox" parameterType="com.manager.nacelle_rent.entity.RepairBoxInfo">-->
+        <!--INSERT INTO repair_info(device_id,project_id,dealer_id,description,image_end,end_time)-->
+        <!--VALUES (#{deviceId},#{projectId},#{dealerId},#{description},#{imageEnd},#{endTime})-->
+        <!--ON DUPLICATE KEY UPDATE-->
+        <!--device_id=VALUES(device_id),project_id= VALUES(project_id),dealer_id=VALUES(dealer_id),description=VALUES(description),image_end=VALUES(image_end),end_time=VALUES(end_time)-->
+    <!--</select>-->
+
+    <update id="createRepairEndBox">
+        UPDATE repair_info
+        SET dealer_id=#{dealerId}, description=#{description}, image_end=#{imageEnd}, end_time=#{endTime}
+        WHERE device_id= #{deviceId} AND project_id=#{projectId}
+    </update>
+
+    <select id="getRepairInfo" resultMap="repairBoxMap">
+        SELECT *
+        FROM repair_info
+        WHERE  project_id = #{projectId}
     </select>
 
-    <select id="getRepairInfo" parameterType="com.manager.nacelle_rent.entity.RepairBoxInfo">
+    <select id="getRepairInfoOne" resultMap="repairBoxMap">
         SELECT *
         FROM repair_info
         WHERE  device_id = #{deviceId}
     </select>
+
+    <delete id="deleteRepairBox">
+        DELETE FROM repair_info
+        WHERE device_id = #{deviceId}
+    </delete>
 
 </mapper>

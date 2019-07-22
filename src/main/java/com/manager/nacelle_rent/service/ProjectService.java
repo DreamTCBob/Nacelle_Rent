@@ -26,7 +26,7 @@ public interface ProjectService {
     String handleConfigurationList(Map<String, String> list);
     String getConfigurationList(String projectId);
     boolean beginWork(String projectId, String userId, String boxId);
-    boolean endWork(String projectId ,String boxId);
+    boolean endWork(String projectId,String userId, String boxId);
     int storageControl(String projectId, String deviceId, String managerId,String image, int storageState);
     int installApply(String projectId, int picNum, String managerId);
     int beginProject(String projectId, String storageList, String managerId);
@@ -36,7 +36,10 @@ public interface ProjectService {
     int createExceptionBox(String deviceId, String projectId, String managerId, String reason);
     int createRepairBox(Map<String,String> repair);
     int createRepairEndBox(Map<String,String> repair);
-    RepairBoxInfo getRepairBox(String projectId);
+    int deleteProject(String projectId);
+    List<RepairBoxInfo> getRepairBox(String projectId);
+    List<RepairBoxInfo> getRepairBoxOne(String deviceId);
+    List<RepairBoxInfo> getRepairEndBoxOne(String deviceId);
     JSONObject getStoreInInfo(String projectId, String deviceId, String managerId);
     JSONObject getBeginWorkInfo(String projectId, int picNum, String managerId);
     JSONObject getStoreCertInfo(String projectId, int picNum, String managerId);

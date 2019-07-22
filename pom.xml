@@ -105,15 +105,18 @@
             <version>2.5.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.MiPush</groupId>
-            <artifactId>sdk-server</artifactId>
-            <version>2_2_20</version>
-        </dependency>
+
+
         <dependency>
             <groupId>com.MiPush.jsonSimple</groupId>
             <artifactId>json-simple</artifactId>
             <version>1.1.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.MiPush</groupId>
+            <artifactId>sdk-server</artifactId>
+            <version>2_2_20</version>
         </dependency>
 
         <!--ftp相关依赖-->

@@ -8,6 +8,7 @@
         <result property="deviceId" column="device_id" />
         <result property="projectBuilders" column="project_builders"/>
         <result property="projectName" column="project_name"/>
+        <result property="timeStart" column="time"/>
     </resultMap>
     <select id="getElectricRes" resultMap="electricResResultMap" parameterType="String">
         SELECT device_id, project_builders
@@ -38,7 +39,7 @@
 
     <delete id="deleteWorkBox">
         DELETE FROM electricbox_res
-        WHERE device_id = #{deviceId}
+        WHERE project_builders = #{userId}
     </delete>
 
     <update id="updateWorker">

@@ -2,6 +2,7 @@ package com.manager.nacelle_rent.service;
 
 import com.manager.nacelle_rent.entity.User;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 
@@ -12,9 +13,11 @@ public interface UserService {
     int registerAndroidUser(User user);
     int getRegisterState(String userPhone);
     int judgeProAdmin(String userId);
+    int deleteUser(String userId);
     int updateQualifications(String userId, int picNum);
     String createWebAdmin(Map<String, String> map);
     String getQualifications(String userId);
+    String updatePassword(String userId, String oldPassword, String newPassword);
     List<User> getRegisterUnChecked();
     List<User> getAllAccount();
     int getRegisterUnCheckedNum();
@@ -24,5 +27,5 @@ public interface UserService {
     boolean handleStoreIn(String projectId, String storeId, String handleResult);
     boolean pushConfigurationList(String pushList, String projectId);
     void sendMessageToAreaAdmin(String alias) throws Exception;
-    void sendRepairMessage(String projectId, String deviceId) throws Exception;
+    void sendRepairMessage(String projectId, String deviceId, Timestamp startTime) throws Exception;
 }

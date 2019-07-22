@@ -49,6 +49,7 @@ public interface UserMapper {
     //根据WEB返回结果处理注册审核
     void deleteUser(String[] multipleUserId);
     void updateRegisterState(String[] multipleUserId);
+    void updatePassword(@Param("userId") String userId, @Param("newPassword") String newPassword);
 
     void createWebAdmin(@Param("userRole") String userRole, @Param("userName") String userName, @Param("userPassword") String userPassword,
                         @Param("userId") String userId, @Param("userPhone") String userPhone, @Param("isChecked") int isChecked);

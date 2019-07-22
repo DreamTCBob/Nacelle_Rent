@@ -14,7 +14,7 @@ public interface ProjectMapper {
     Project getProjectDetail(String projectId);
     String checkProjectId(String projectId);
     String searchCompany(@Param("projectId") String projectId);
-    Project getProjectId(String userId);
+    List<Project> getProjectId(String userId);
     Project getProjectIdByStore(String storeId);
     Project checkStorage(String storageId);
     Project getProjectIdByAdmin(String userId);
@@ -32,4 +32,5 @@ public interface ProjectMapper {
     void createCompany(@Param("companyName") String companyName, @Param("projectId") String projectId);
     void createConfigurationList(@Param("projectId") String projectId, @Param("sixMetersNum") int sixMetersNum);
     int getConfigurationList(@Param("projectId") String projectId);
+    void deleteProject(String[] multipleProjectId);
 }

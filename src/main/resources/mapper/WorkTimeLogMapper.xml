@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.manager.nacelle_rent.dao.WorkTimeLogMapper">
+    <resultMap id="workTimeLogResultMap" type="com.manager.nacelle_rent.entity.WorkTimeLog">
+        <result property="id" column="id" />
+        <result property="projectId" column="project_id" />
+        <result property="deviceId" column="device_id" />
+        <result property="userId" column="user_id"/>
+        <result property="timeWork" column="time_work"/>
+    </resultMap>
+
+    <insert id="createWorkTimeLog">
+        INSERT INTO work_time_log(user_id,project_id,device_id,time_work)
+        VALUES(#{userId},#{projectId},#{deviceId},#{timeWork})
+    </insert>
+
+    <select id="getWorkerTime" resultMap="workTimeLogResultMap">
+        SELECT *
+        FROM work_time_log
+        WHERE user_id = #{userId}
+    </select>
+
+</mapper>

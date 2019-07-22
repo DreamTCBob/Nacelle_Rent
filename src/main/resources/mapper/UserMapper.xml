@@ -120,6 +120,12 @@
         WHERE  user_id = #{userId}
     </update>
 
+    <update id="updatePassword">
+        UPDATE user_info
+        SET user_password = #{newPassword}
+        WHERE  user_id = #{userId}
+    </update>
+
     <insert id="createWebAdmin">
         INSERT INTO user_info(role_id,user_name,user_password,user_id,user_phone,isChecked)
         VALUES(#{userRole},#{userName},#{userPassword},#{userId},#{userPhone},#{isChecked})

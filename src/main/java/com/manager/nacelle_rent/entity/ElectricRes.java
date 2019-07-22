@@ -1,5 +1,6 @@
 package com.manager.nacelle_rent.entity;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 
 public class ElectricRes {
@@ -7,6 +8,7 @@ public class ElectricRes {
     private String projectId;
     private String projectName;
     private String projectBuilders;
+    private Timestamp timeStart;
     private ArrayList<SimpleUser> projectBuildersDetail;
 
     public String getDeviceId() {
@@ -39,6 +41,14 @@ public class ElectricRes {
 
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+
+    public Timestamp getTimeStart() {
+        return timeStart;
+    }
+
+    public void setTimeStart(Timestamp timeStart) {
+        this.timeStart = timeStart;
     }
 
     public ArrayList<SimpleUser> getProjectBuildersDetail() {

@@ -156,4 +156,12 @@
         FROM configuration_list
         WHERE  project_id= #{projectId}
     </select>
+
+    <delete id="deleteProject">
+        DELETE FROM project_info
+        WHERE project_id in
+        <foreach collection="array" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
 </mapper>
