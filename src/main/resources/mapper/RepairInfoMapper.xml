@@ -50,6 +50,12 @@
         WHERE  device_id = #{deviceId}
     </select>
 
+    <select id="getRepairBoxNum" resultType="int">
+        SELECT COUNT(*) AS repairBoxNum
+        FROM repair_info
+        WHERE project_id = #{projectId}
+    </select>
+
     <delete id="deleteRepairBox">
         DELETE FROM repair_info
         WHERE device_id = #{deviceId}

@@ -4,12 +4,15 @@ import com.alibaba.fastjson.JSONObject;
 import com.auth0.jwt.interfaces.Claim;
 import com.manager.nacelle_rent.dao.ElectricResMapper;
 import com.manager.nacelle_rent.dao.ProjectMapper;
+import com.manager.nacelle_rent.dao.ProjectWorkerMapper;
 import com.manager.nacelle_rent.dao.UserMapper;
 import com.manager.nacelle_rent.entity.ElectricRes;
 import com.manager.nacelle_rent.entity.Project;
 import com.manager.nacelle_rent.entity.User;
 import com.manager.nacelle_rent.service.ProjectService;
+import com.manager.nacelle_rent.service.RedisService;
 import com.manager.nacelle_rent.service.UserService;
+import com.manager.nacelle_rent.utils.FileUtil;
 import com.manager.nacelle_rent.utils.JwtUtil;
 import com.manager.nacelle_rent.utils.UserCheckUtil;
 import io.swagger.annotations.Api;
@@ -41,6 +44,10 @@ public class UserController {
     private ElectricResMapper electricResMapper;
     @Autowired
     private ProjectMapper projectMapper;
+    @Autowired
+    private ProjectWorkerMapper projectWorkerMapper;
+    @Autowired
+    private RedisService redisService;
 
     private static Logger logger=Logger.getLogger(UserController.class); // 获取logger实例
 
@@ -137,12 +144,14 @@ public class UserController {
                     jsonObject.put("registerState","2");
                     jsonObject.put("isLogin", false);
                 }
+                System.out.println(jsonObject.toString());
             }else{
                 if(userToken == null || userToken.equals("null")){
                     User userInfo = (User)subjectResult.get("userInfo");
                     jsonObject.put("token",JwtUtil.getToken(userInfo));
                 }
                 jsonObject.put("isLogin", true);
+
                 logger.info(userId +" 登录");
             }
         } else {
@@ -167,6 +176,7 @@ public class UserController {
                 String name = claims.get("userName").asString();
                 jsonObject.put("userRole",role);
                 jsonObject.put("userName",name);
+                jsonObject.put("isAllowed",true);
             }catch(Exception ex){
                 jsonObject.put("isAllowed",false);
             }
@@ -373,18 +383,35 @@ public class UserController {
         int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if (flag == 1) {
             if(userId!=null) {
-                User userInfo = userMapper.getUserInfo(userId);
+                User userInfo;
+                if(redisService.getUser(userId) != null){
+                    userInfo = redisService.getUser(userId);
+                }else {
+                    userInfo = userMapper.getUserInfo(userId);
+                    if(userInfo != null){
+                        redisService.setUser(userInfo);
+                    }
+                }
                 Project project = null;
                 String projectId = "";
                 String projectName = "";
                 if(userInfo.getUserRole().contains("worker"))
-                    projectId = projectService.getProjectId(userId);
+                    projectId = projectWorkerMapper.getWorker(userId).size() == 0 ? "" : projectWorkerMapper.getWorker(userId).get(0);
                 else if(userInfo.getUserRole().equals("rentAdmin")) {
                     if(projectMapper.getProjectIdByAdmin(userId)!=null)
                         projectId = projectMapper.getProjectIdByAdmin(userId).getProjectId();
                 }
-                if(!projectId.equals(""))
-                    project = projectMapper.getProjectDetail(projectId);
+                if(!projectId.equals("")) {
+                    if (redisService.getProject(projectId) != null) {
+                        project = redisService.getProject(projectId);
+                    } else {
+                        project = projectMapper.getProjectDetail(projectId);
+                        if (project != null) {
+                            redisService.setProject(project);
+                        }
+                    }
+                }
+
                 if(project != null)
                     projectName = project.getProjectName();
                 if(userInfo.getUserRole().contains("worker")) {///////如果是工人就返回状态
@@ -431,6 +458,25 @@ public class UserController {
         return jsonObject;
     }
 
+    @ApiOperation(value = "新建管理员帐户" ,  notes="只对超管开放")
+    @PostMapping("/createManageAdmin")
+    public JSONObject createManageAdmin(HttpServletRequest request, @RequestBody Map<String,String> map){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin").get("result");
+        if(flag == 1){
+            String result = userService.createManageAdmin(map);
+            if(result.equals("fail") || result.equals("repeat"))
+                jsonObject.put("fail",result);
+            else
+                jsonObject.put("success",result);
+            jsonObject.put("isLogin",true);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
     @ApiOperation(value = "判断是否是项目管理员" ,  notes="")
     @PostMapping("/judgeProAdmin")
     public JSONObject judgeProAdmin(HttpServletRequest request, @RequestParam String userId){
@@ -443,6 +489,7 @@ public class UserController {
                 jsonObject.put("projectAdmin",1);
             else
                 jsonObject.put("projectAdmin",0);
+            jsonObject.put("isLogin",true);
         }else{
             jsonObject.put("isLogin",false);
         }
@@ -532,4 +579,134 @@ public class UserController {
         }
         return jsonObject;
     }
+
+    @ApiOperation(value = "新建安装队伍人员信息" ,  notes="")
+    @PostMapping("/createInstaller")
+    public JSONObject createInstaller(HttpServletRequest request, @RequestParam String projectId, @RequestParam String userId, @RequestParam String deviceId,
+                                      @RequestParam String name, @RequestParam String phone, @RequestParam String accountId){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            int result = userService.createInstaller(projectId,userId,deviceId,name,phone,accountId);
+            if(result == 1)
+                jsonObject.put("create","success");
+            else
+                jsonObject.put("create","fail");
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "修改安装队伍人员信息" ,  notes="")
+    @PostMapping("/updateInstaller")
+    public JSONObject updateInstaller(HttpServletRequest request, @RequestParam String projectId, @RequestParam String userId,@RequestParam String deviceId,
+                                      @RequestParam String name, @RequestParam String phone, @RequestParam String accountId){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            int result = userService.updateInstaller(projectId,userId,deviceId,name,phone,accountId);
+            if(result == 1)
+                jsonObject.put("update","success");
+            else
+                jsonObject.put("update","fail");
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "获取安装队伍人员信息" ,  notes="")
+    @GetMapping("/getInstaller")
+    public JSONObject getInstaller(HttpServletRequest request, @RequestParam String projectId, @RequestParam String userId, @RequestParam String deviceId){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            List<JSONObject> result = userService.getInstaller(projectId,userId,deviceId);
+            jsonObject.put("installerTeam", result);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "删除安装队伍人员信息" ,  notes="")
+    @PostMapping("/deleteInstaller")
+    public JSONObject deleteInstaller(HttpServletRequest request, @RequestParam String projectId,
+                                      @RequestParam String userId, @RequestParam String deviceId, @RequestParam String phone){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            int result = userService.deleteInstaller(projectId,userId,deviceId,phone);
+            if(result == 1)
+                jsonObject.put("delete","success");
+            else
+                jsonObject.put("delete","fail");
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "安装队伍获取项目信息" ,  notes="")
+    @GetMapping("/getProjectByInstaller")
+    public JSONObject getProjectByInstaller(HttpServletRequest request, @RequestParam String userId, @RequestParam String projectId, @RequestParam int type){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            JSONObject result = userService.getProjectByInstaller(userId, projectId, type);
+            jsonObject.put("info", result);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "更新状态" ,  notes="")
+    @PostMapping("/updateInstallState")
+    public JSONObject updateInstallState(HttpServletRequest request, @RequestParam String projectId, @RequestParam String userId, @RequestParam String deviceId,
+                                  @RequestParam int state, @RequestParam int type){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            int result = userService.updateInstallState(projectId,userId,deviceId,state, type);
+            if(result == 1)
+                jsonObject.put("update","success");
+            else
+                jsonObject.put("update","fail");
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "区域管理员获取项目安装信息" ,  notes="")
+    @GetMapping("/getProjectInstallInfoByProjectId")
+    public JSONObject getProjectInstallInfoByProjectId(HttpServletRequest request, @RequestParam String projectId){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            JSONObject result = userService.getProjectInstallInfoByProjectId(projectId);
+            jsonObject.put("info", result);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+
 }

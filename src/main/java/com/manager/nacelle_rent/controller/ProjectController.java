@@ -1,16 +1,12 @@
 package com.manager.nacelle_rent.controller;
 import com.alibaba.fastjson.JSONObject;
-import com.manager.nacelle_rent.dao.WorkTimeLogMapper;
+import com.manager.nacelle_rent.dao.*;
 import com.manager.nacelle_rent.entity.*;
-import com.manager.nacelle_rent.dao.ElectricStateMapper;
-import com.manager.nacelle_rent.dao.ProjectMapper;
-import com.manager.nacelle_rent.dao.UserMapper;
-import com.manager.nacelle_rent.service.PreStopService;
-import com.manager.nacelle_rent.service.ProjectService;
-import com.manager.nacelle_rent.service.UserService;
-import com.manager.nacelle_rent.service.WorkTimeLogService;
+import com.manager.nacelle_rent.enums.ProjectStateEnum;
+import com.manager.nacelle_rent.service.*;
 import com.manager.nacelle_rent.utils.DateUtil;
 import com.manager.nacelle_rent.utils.FileUtil;
+import com.manager.nacelle_rent.utils.RedisUtil;
 import com.manager.nacelle_rent.utils.UserCheckUtil;
 
 import io.swagger.annotations.Api;
@@ -19,7 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import javax.servlet.http.HttpServletRequest;
+import java.io.InputStream;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -42,9 +41,13 @@ public class ProjectController {
     @Autowired
     private ElectricStateMapper electricStateMapper;
     @Autowired
+    private ElectricResMapper electricResMapper;
+    @Autowired
     private SimpMessagingTemplate messagingTemplate;
     @Autowired
     private ConfigurationList configurationList;
+    @Autowired
+    private RedisService redisService;
 
     @Value("${localFilePath}")
     private String localFilePath;
@@ -70,22 +73,30 @@ public class ProjectController {
                         projectMapper.updateProject(project.getProjectId(), project.getProjectName(), DateUtil.timeToDate(project.getProjectStart()),
                                 project.getProjectId() + ".txt", "", 1);
                         projectMapper.createCompany(project.getCompanyName(),project.getProjectId());
+                        projectMapper.updateKeyWord(project.getProjectId(), project.getOwner(), project.getRegion(),project.getCoordinate(), project.getServicePeriod());
                         map.put("userRole","basketSupervisor");
                         map.put("userPassword","123456");
                         map.put("userName",project.getProjectName());
                         map.put("userPhone",project.getProjectId());
                         userService.createWebAdmin(map);
+                        project.setProjectContractUrl(project.getProjectId() + ".txt");
+                        redisService.setProject(project);
+                        //projectMapper.updateKeyWord(project.getProjectId(), project.getOwner(), project.getRegion());
                     }else {
                         projectMapper.createProject(project.getProjectId(),project.getProjectName(), DateUtil.timeToDate(project.getProjectStart()),
                                 project.getProjectId()+".txt",project.getAdminAreaId(),project.getAdminRentId());
                         projectMapper.updateProject(project.getProjectId(), project.getProjectName(), DateUtil.timeToDate(project.getProjectStart()),
                                 project.getProjectId() + ".txt", "", 1);
                         projectMapper.createCompany(project.getCompanyName(),project.getProjectId());
+                        projectMapper.updateKeyWord(project.getProjectId(), project.getOwner(), project.getRegion(),project.getCoordinate(), project.getServicePeriod());
                         map.put("userRole","basketSupervisor");
                         map.put("userPassword","123456");
                         map.put("userName",project.getProjectName());
                         map.put("userPhone",project.getProjectId());
                         userService.createWebAdmin(map);
+                        project.setProjectContractUrl(project.getProjectId() + ".txt");
+                        redisService.setProject(project);
+                        //projectMapper.updateKeyWord(project.getProjectId(), project.getOwner(), project.getRegion());
                     }
                     jsonObject.put("isCreated",true);
                 }catch(Exception e){
@@ -119,11 +130,17 @@ public class ProjectController {
                         projectMapper.updateProject(project.getProjectId(), project.getProjectName(), DateUtil.timeToDate(project.getProjectStart()),
                                 project.getProjectId()+".txt", "",0);
                         projectMapper.createCompany(project.getCompanyName(),project.getProjectId());
+                        projectMapper.updateKeyWord(project.getProjectId(), project.getOwner(), project.getRegion(),project.getCoordinate(), project.getServicePeriod());
+                        project.setProjectContractUrl(project.getProjectId() + ".txt");
+                        redisService.setProject(project);
                     }else{
                         //否则新建
                         projectMapper.createProject(project.getProjectId(),project.getProjectName(), DateUtil.timeToDate(project.getProjectStart()),
                                 project.getProjectId()+".txt","",project.getAdminRentId());
                         projectMapper.createCompany(project.getCompanyName(),project.getProjectId());
+                        projectMapper.updateKeyWord(project.getProjectId(), project.getOwner(), project.getRegion(),project.getCoordinate(), project.getServicePeriod());
+                        project.setProjectContractUrl(project.getProjectId() + ".txt");
+                        redisService.setProject(project);
                     }
                     jsonObject.put("isEdit", true);
                 } catch (Exception e) {
@@ -224,12 +241,13 @@ public class ProjectController {
         String password = request.getHeader("Authorization");
         int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
-            if(userFlag == 5) {
-                List<JSONObject> storeList = projectService.getStoreList(userFlag);
-                if (storeList != null) {
-                    jsonObject.put("storeList", storeList);
-                }
+//            if(userFlag == 5) {
+            List<JSONObject> storeList = projectService.getStoreList(userFlag);
+            if (storeList != null) {
+                jsonObject.put("storeList", storeList);
             }
+            jsonObject.put("isAllowed",true);
+//            }
         }else{
             jsonObject.put("isAllowed",false);
         }
@@ -245,10 +263,16 @@ public class ProjectController {
         if(flag == 1){
             try {
                 jsonObject = projectService.getProjectDetail(projectId);
-                jsonObject.put("isAllowed",true);
+                if(jsonObject == null){
+                    jsonObject = new JSONObject();
+                    jsonObject.put("isAllowed",true);
+                    jsonObject.put("isRead", false);
+                }else {
+                    jsonObject.put("isAllowed", true);
+                }
             }catch (Exception ex){
                 ex.printStackTrace();
-                jsonObject.put("isAllowed",false);
+                jsonObject.put("isAllowed",true);
                 jsonObject.put("isRead", false);
             }
         }else{
@@ -322,15 +346,24 @@ public class ProjectController {
         if(flag == 1){
             try{
                 String projectId = projectService.getProjectIdByAdmin(userId);
-
+                Project project;
+                if(redisService.getProject(projectId) != null){
+                    project = redisService.getProject(projectId);
+                }else {
+                    project = projectMapper.getProjectDetail(projectId);
+                    if(project != null){
+                        redisService.setProject(project);
+                    }
+                }
                 if(!projectId.equals("")) {
-                    if(projectService.getProjectDetail(projectId)!=null && projectService.getBasketList(projectId)!=null) {
+                    if(project != null && projectService.getBasketList(projectId)!=null) {
                         boxList = projectService.getBasketList(projectId);
                         String[] b = boxList.split(",");
                         for (int i = 0; i < b.length; i++) {
                             if (!b[i].equals("")) {
                                 ElectricBoxState electricBoxState = projectService.getBoxLog(b[i]);
-                                String adminName = userService.getUserInfo(projectMapper.getProjectDetail(projectId).getAdminAreaId()).getUserName();
+
+                                String adminName = userService.getUserInfo(project.getAdminAreaId()).getUserName();
                                 electricBoxState.setProjectId(adminName);
                                 jsonObject.put("Box" + i, electricBoxState);
                             }
@@ -363,8 +396,8 @@ public class ProjectController {
         if(flag == 1){
             try{
                 jsonObject.put("isAllowed", true);
-                List<Project> projectList = projectService.getAllProjectByAdmin(userId);
-                jsonObject.put("projectList",projectList);
+                JSONObject jsonObject1 = projectService.getAllProjectByAdmin(userId);
+                jsonObject.put("projectList",jsonObject1);
             }catch (Exception ex){
                 ex.printStackTrace();
                 jsonObject.put("isAllowed", true);
@@ -408,13 +441,18 @@ public class ProjectController {
         if(flag == 1) {
             try {
                 boolean result = projectService.endWork(projectId, userId, boxId);
+                if(electricResMapper.getDevice(boxId).size() == 0)
+                    jsonObject.put("hasPeople",false);
+                else jsonObject.put("hasPeople",true);
                 if(result) {
                     jsonObject.put("endWork",true);
                 }else
                     jsonObject.put("endWork", false);
             }catch (Exception ex){
                 jsonObject.put("endWork",false);
+                jsonObject.put("hadPeople",true);
             }
+            jsonObject.put("isAllowed",true);
         }else{
             jsonObject.put("isAllowed",false);
         }
@@ -477,6 +515,15 @@ public class ProjectController {
         return jsonObject;
     }
 
+    /**
+     * 没用了
+     * @param request
+     * @param projectId
+     * @param deviceId
+     * @param managerId
+     * @param picNum
+     * @return
+     */
     @ApiOperation(value = "吊篮报停、吊篮状态参数为5" ,  notes="")
     @PostMapping("/storageControl")
     public JSONObject storageControl(HttpServletRequest request, @RequestParam String projectId, @RequestParam String deviceId,
@@ -526,11 +573,23 @@ public class ProjectController {
         }
         return jsonObject;
     }
+    /**
+     * 没用了
+     * @return
+     */
     @ApiOperation(value = "租方管理员预报停" ,  notes="")
     @PostMapping("/prepareEnd")
     public JSONObject prepareEnd(HttpServletRequest request, @RequestParam String projectId, @RequestParam String storageList){
         JSONObject jsonObject = new JSONObject();
-        Project project = projectMapper.getProjectDetail(projectId);
+        Project project;
+        if(redisService.getProject(projectId) != null){
+            project = redisService.getProject(projectId);
+        }else {
+            project = projectMapper.getProjectDetail(projectId);
+            if(project != null){
+                redisService.setProject(project);
+            }
+        }
         String password = request.getHeader("Authorization");
         int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1) {
@@ -561,7 +620,10 @@ public class ProjectController {
         }
         return jsonObject;
     }
-
+    /**
+     * 没用了
+     * @return
+     */
     @ApiOperation(value = "区域管理员预报停" ,  notes="")
     @PostMapping("/applyEnd")
     public JSONObject applyEnd(HttpServletRequest request, @RequestParam String projectId, @RequestParam int picNum, @RequestParam String managerId){
@@ -713,7 +775,7 @@ public class ProjectController {
                                      @RequestParam String managerId, @RequestParam int picNum){
         JSONObject jsonObject = new JSONObject();
         JSONObject jsonObject1 = new JSONObject();
-        int result = 0;
+        int result;
         String image = "";
         for(int i = 0 ; i < picNum ; i++) {
             image += projectId + "_" + deviceList + "_" + (i+1) + ".jpg" + ";";
@@ -726,6 +788,7 @@ public class ProjectController {
         if(flag == 1) {
             try {
                 if(deviceId != null) {
+                    int sum = deviceId.length;
                     for (int i = 0; i < deviceId.length; i++) {
                         result = projectService.storageControl(projectId, deviceId[i], managerId, image, 5);
                         jsonObject.put("isAllowed", true);
@@ -745,20 +808,26 @@ public class ProjectController {
                                 break;
                             case 1:
                                 jsonObject.put("update", "没有权限");
+                                sum -= 1;
                                 break;
                             case 2:
                                 jsonObject.put("update", "same state");
+                                sum -= 1;
                                 break;
                             case 3:
                                 jsonObject.put("update", "is working");
+                                sum -= 1;
                                 break;
                             case 4:
                                 jsonObject.put("update", "异常");
+                                sum -= 1;
                                 break;
                             default:
+                                sum -= 1;
                                 jsonObject.put("update", "异常");
                         }
                     }
+                    projectMapper.createElectricBoxStopInfo(projectId,managerId,sum);
                 }else {
                     jsonObject.put("update",false);
                     jsonObject.put("isAllowed",true);
@@ -804,9 +873,7 @@ public class ProjectController {
         return jsonObject;
     }
 
-    /*
-     **************5.1日修改内容****************
-     */
+    /*/
 
     @ApiOperation(value = "获取可用吊篮的数目以及状态" ,  notes="只对超管开放")
     @PostMapping(value="/getStorageSum")
@@ -865,12 +932,12 @@ public class ProjectController {
         JSONObject jsonObject=new JSONObject();
         String password = request.getHeader("Authorization");
         int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin,engineeringWebAdmin,salesWebAdmin,accountingWebAdmin").get("result");
+
         if(flag == 1){
             jsonObject.put("totalPreStopBasket", projectService.getStorageSum(1).get("usedSum"));
         } else{
             jsonObject.put("isAllowed",false);
         }
-        System.out.println(configurationList.configurationListToString(1));
         return jsonObject;
     }
 
@@ -1100,7 +1167,20 @@ public class ProjectController {
             try{
                 jsonObject.put("isAllowed", true);
                 String projectId = userMapper.judgeProAdmin(userId);
-                Project project = projectId == null ? null : projectMapper.getProjectDetail(projectId);
+                Project project;
+                if(projectId == null){
+                    project = null;
+                }else {
+                    if(redisService.getProject(projectId) != null){
+                        project = redisService.getProject(projectId);
+                    }else {
+                        project = projectMapper.getProjectDetail(projectId);
+                        if(project != null){
+                            redisService.setProject(project);
+                        }
+                    }
+                }
+//                Project project = projectId == null ? null : projectMapper.getProjectDetail(projectId);
                 jsonObject.put("project",project);
             }catch (Exception ex){
                 ex.printStackTrace();
@@ -1131,12 +1211,14 @@ public class ProjectController {
                 if(resultList.equals("fail"))
                     jsonObject.put("push","fail");
                 else {
-                    projectMapper.updateState(list.get("projectId"),12);
+                    projectMapper.updateState(list.get("projectId"), ProjectStateEnum.getCode("清单待审核").getCode());
                     messagingTemplate.convertAndSend("/topic/subscribeTest", jsonObject1);
 //                if(userService.pushConfigurationList(resultList,list.get("projectId"))) {
 //                    jsonObject.put("push", "success");
 //                }
 //                else jsonObject.put("push","fail");
+                    Project project = projectMapper.getProjectDetail(list.get("projectId"));
+                    redisService.setProject(project);
                     jsonObject.put("push", "success");
                 }
             }catch (Exception ex){
@@ -1190,7 +1272,9 @@ public class ProjectController {
             //List<JSONObject> list = data.get("partsList");
             if(userService.pushConfigurationList(data.remove("partsList").toString(),projectId)) {
                 try{
-                    projectMapper.updateState(projectId,2);
+                    projectMapper.updateState(projectId,ProjectStateEnum.getCode("吊篮安装验收").getCode());
+                    Project project = projectMapper.getProjectDetail(projectId);
+                    redisService.setProject(project);
                     jsonObject.put("pass", "success");
                 }catch (Exception e){
                     jsonObject.put("pass","fail");
@@ -1229,7 +1313,6 @@ public class ProjectController {
         return jsonObject;
     }
 
-
     @ApiOperation(value = "获取某一项目的吊篮列表" ,  notes="")
     @GetMapping("/getBasketListByAdmin")
     public JSONObject getBasketListByAdmin(@RequestParam String projectId, HttpServletRequest request){
@@ -1241,14 +1324,15 @@ public class ProjectController {
                 String basketList = projectService.getBasketList(projectId);
                 if(basketList != null) {
                     if(!basketList.equals("")) {
+                        jsonObject.put("basketList", basketList);
                         String[] basket = basketList.split(",");
                         for (int i = 0; i < basket.length; i++) {
-                            if(electricStateMapper.getBoxLog(basket[i]).getStorageState() == 3) {
+                            if(basket[i].equals("A")||basket[i].equals("B")) continue;
+                            if(electricStateMapper.getBoxLog(basket[i]).getStorageState() != 0) {
                                 jsonObject.put("storage" + i, electricStateMapper.getBoxLog(basket[i]));
                                 basketList = basketList.replace(basket[i] + ",", "");
                             }
                         }
-                        jsonObject.put("basketList", basketList);
                     }else jsonObject.put("basketList", "");
                     jsonObject.put("isAllowed", true);
                 }else {
@@ -1284,4 +1368,197 @@ public class ProjectController {
         }
         return jsonObject;
     }
+
+    @ApiOperation(value = "获取单个吊篮信息" ,  notes="")
+    @GetMapping("/getStorageInfo")
+    public JSONObject getStorageInfo(HttpServletRequest request, @RequestParam String deviceId){
+        JSONObject jsonObject = new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            JSONObject jsonObject1 = projectService.getStorageInfo(deviceId);
+            jsonObject.put("storageInfo", jsonObject1);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "获取正在工作的吊篮上的工人" ,  notes="")
+    @GetMapping("/getWorker")
+    public JSONObject getWorker(HttpServletRequest request, @RequestParam int type, @RequestParam String deviceId){
+        JSONObject jsonObject = new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            JSONObject jsonObject1 = projectService.getWorker(type, deviceId);
+            jsonObject.put("workerList", jsonObject1);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "按照项目名或地区模糊查找项目(web前端专用)" ,  notes="")
+    @GetMapping("/getProjectByVague")
+    public JSONObject getProjectByVague(HttpServletRequest request, @RequestParam String subString){
+        JSONObject jsonObject = new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            List<Project> list = projectService.getProjectByVague(subString);
+            jsonObject.put("projectList", list);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "获取不同层级的项目列表(IOS专用)" ,  notes="")
+    @GetMapping("/getProjectListByKey")
+    public JSONObject getProjectListByKey(HttpServletRequest request, @RequestParam String keyWord, @RequestParam int type, @RequestParam int pageNum){
+        JSONObject jsonObject = new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            List<Project> projectList = projectService.getProjectListByKey(keyWord, type, pageNum);
+            jsonObject.put("projectList", projectList);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "获取指定项目的报修吊篮数目" ,  notes="")
+    @GetMapping("/getRepairBoxNum")
+    public JSONObject getRepairBoxNum(HttpServletRequest request, @RequestParam String projectId){
+        JSONObject jsonObject = new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            int num = projectService.getRepairBoxNum(projectId);
+            jsonObject.put("repairBoxNum", num);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "新建安装信息" ,  notes="")
+    @PostMapping("/createInstallInfo")
+    public JSONObject createInstallInfo(HttpServletRequest request, @RequestParam String projectId, @RequestParam String userId, @RequestParam String deviceList){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            int result = projectService.createInstallInfo(projectId,userId,deviceList);
+            if(result == 1)
+                jsonObject.put("create","success");
+            else
+                jsonObject.put("create","fail");
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "获取报警记录" ,  notes="")
+    @GetMapping("/getAlarmInfo")
+    public JSONObject getAlarmInfo(HttpServletRequest request, @RequestParam int type, @RequestParam String value){
+        JSONObject jsonObject = new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            jsonObject.put("alarmInfo", projectService.getAlarmInfo(type, value));
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "获取报停记录" ,  notes="")
+    @GetMapping("/getElectricStopInfo")
+    public JSONObject getElectricStopInfo(HttpServletRequest request, @RequestParam int type, @RequestParam String value){
+        JSONObject jsonObject = new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            jsonObject.put("electricBoxStopInfo", projectService.getElectricBoxStop(type, value));
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "前端上传平面图" ,  notes="")
+    @PostMapping("/uploadPlaneGraph")
+    public JSONObject uploadPlaneGraph(HttpServletRequest request, @RequestParam MultipartFile file, @RequestParam String projectId, @RequestParam int num , @RequestParam int type){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            int result = 0;
+            try {
+                InputStream inputStream = file.getInputStream();
+                result = projectService.uploadPlaneGraph(inputStream, projectId, num, type);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+            if(result == 1)
+                jsonObject.put("upload","success");
+            else
+                jsonObject.put("upload","fail");
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "平面图信息" , notes = "")
+    @PostMapping("/uploadPlaneGraphInfo")
+//    public JSONObject uploadPlaneGraphInfo(HttpServletRequest request, @RequestParam String projectId,
+//                                           @RequestParam Map<Object, String> info,@RequestParam String buildingNum, @RequestParam int type){
+    public JSONObject uploadPlaneGraphInfo(HttpServletRequest request, @RequestParam Map<String, Object> info){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            JSONObject jsonObject1 = JSONObject.parseObject((String) info.get("info"));
+            JSONObject jsonObject2 = jsonObject1.getJSONObject("info");
+            jsonObject.put("isLogin",true);
+            int result = projectService.uploadPlaneGraphInfo(jsonObject2, jsonObject1.getString("projectId"), jsonObject1.getString("buildingNum"), Integer.parseInt(jsonObject1.getString("type")));
+            if(result == 1)
+                jsonObject.put("upload","success");
+            else
+                jsonObject.put("upload","fail");
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "获取平面图信息" ,  notes="")
+    @GetMapping("/getPlaneGraphInfo")
+    public JSONObject getPlaneGraphInfo(HttpServletRequest request, @RequestParam String projectId, @RequestParam String buildingNum, @RequestParam int type){
+        JSONObject jsonObject = new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            jsonObject.put("planeGraphInfo", projectService.getPlaneGraphInfo(projectId, buildingNum, type));
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
 }

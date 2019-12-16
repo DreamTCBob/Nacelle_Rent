@@ -14,13 +14,54 @@
         <result property="timestamp" column="timestamp" />
         <result property="weight" column="weight" />
     </resultMap>
+    <insert id="updateElectricBoxConfigByHoist" parameterType="String">
+        INSERT INTO electricbox_config(device_id,hoist_id)
+        VALUES (#{deviceId},#{hoistId})
+        ON DUPLICATE KEY UPDATE
+        device_id =VALUES(device_id),hoist_id=VALUES(hoist_id)
+    </insert>
+
+    <insert id="updateElectricBoxConfigByCamera" parameterType="String">
+        INSERT INTO electricbox_config(device_id,camera_id)
+        VALUES (#{deviceId},#{cameraId})
+        ON DUPLICATE KEY UPDATE
+        device_id =VALUES(device_id),camera_id=VALUES(camera_id)
+    </insert>
+
+    <insert id="updateElectricBoxConfigBySafeLock" parameterType="String">
+        INSERT INTO electricbox_config(device_id,safe_lock_id)
+        VALUES (#{deviceId},#{safeLockId})
+        ON DUPLICATE KEY UPDATE
+        device_id =VALUES(device_id),safe_lock_id=VALUES(safe_lock_id)
+    </insert>
+
     <select id="getRealTimeDataById" resultMap="electricBoxMap" parameterType="String">
         SELECT *
         FROM   electricbox_currentdata
         WHERE  device_id= #{device_id}
     </select>
+
     <delete id="deleteRealTimeDateById">
         DELETE FROM electricbox_currentdata
         WHERE device_id = #{deviceId}
     </delete>
+
+    <update id="deleteElectricBoxConfigByHoist">
+        UPDATE electricbox_config
+        SET hoist_id = null
+        WHERE device_id = #{deviceId}
+    </update>
+
+    <update id="deleteElectricBoxConfigByCamera">
+        UPDATE electricbox_config
+        SET camera_id = null
+        WHERE device_id = #{deviceId}
+    </update>
+
+    <update id="deleteElectricBoxConfigBySafeLock">
+        UPDATE electricbox_config
+        SET safe_lock_id = null
+        WHERE device_id = #{deviceId}
+    </update>
+
 </mapper>

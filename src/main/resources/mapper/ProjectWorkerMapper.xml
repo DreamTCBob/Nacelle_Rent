@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.manager.nacelle_rent.dao.ProjectWorkerMapper">
+
+    <insert id="increaseWorker">
+        INSERT INTO project_worker(project_id,user_id)
+        VALUES(#{projectId},#{userId})
+    </insert>
+
+    <select id="getWorkerList" resultType="String" parameterType="String">
+        SELECT user_id
+        FROM   project_worker
+        WHERE  project_id = #{projectId}
+    </select>
+
+    <select id="getWorker" resultType="String" parameterType="String">
+        SELECT project_id
+        FROM   project_worker
+        WHERE  user_id = #{userId}
+    </select>
+
+    <delete id="deleteWorkerByProjectId">
+        DELETE FROM project_worker
+        WHERE project_id = #{projectId}
+    </delete>
+
+    <delete id="deleteWorkerByUserId">
+        DELETE FROM project_worker
+        WHERE user_id = #{userId}
+    </delete>
+
+</mapper>

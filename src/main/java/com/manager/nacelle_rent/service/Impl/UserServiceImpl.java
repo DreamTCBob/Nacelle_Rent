@@ -1,9 +1,14 @@
 package com.manager.nacelle_rent.service.Impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.manager.nacelle_rent.dao.ElectricBoxMapper;
 import com.manager.nacelle_rent.dao.ElectricStateMapper;
 import com.manager.nacelle_rent.dao.ProjectMapper;
 import com.manager.nacelle_rent.dao.UserMapper;
+import com.manager.nacelle_rent.enums.ElectricBoxStateEnum;
+import com.manager.nacelle_rent.enums.ProjectStateEnum;
+import com.manager.nacelle_rent.service.ProjectService;
+import com.manager.nacelle_rent.service.RedisService;
 import com.manager.nacelle_rent.utils.mapUtils;
 import com.manager.nacelle_rent.entity.User;
 import com.manager.nacelle_rent.entity.Project;
@@ -17,10 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -29,7 +31,13 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private ProjectMapper projectMapper;
     @Autowired
+    private ProjectService projectService;
+    @Autowired
     private ElectricStateMapper electricStateMapper;
+    @Autowired
+    private ElectricBoxMapper electricBoxMapper;
+    @Autowired
+    private RedisService redisService;
     @Value("${APP_SECRET_KEY}")
     private String APP_SECRET_KEY;
     @Value("${MY_PACKAGE_NAME}")
@@ -39,14 +47,45 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User webLoad(String webAdminId) {
-            return userMapper.getUserById(webAdminId);
+        User user;
+        if(redisService.getUser(webAdminId) != null){
+            user = redisService.getUser(webAdminId);
+        }else {
+            user = userMapper.getUserInfo(webAdminId);
+            if(user != null){
+                redisService.setUser(user);
+            }
+        }
+        return user;
     }
     @Override
     public User androidLoad(String userPhone) {
-        return userMapper.getUserByPhone(userPhone);
+        User user;
+        if(userPhone.length() == 11) {
+            if (redisService.getUser(userPhone) != null) {
+                user = redisService.getUser(userPhone);
+            } else {
+                user = userMapper.getUserByPhone(userPhone);
+                if (user != null) {
+                    redisService.setUser(user);
+                }
+            }
+        }else return userMapper.getUserByPhone(userPhone);
+        return user;
     }
     @Override
-    public User getUserInfo(String userId){return userMapper.getUserInfo(userId);}
+    public User getUserInfo(String userId){
+        User userInfo;
+        if(redisService.getUser(userId) != null){
+            userInfo = redisService.getUser(userId);
+        }else {
+            userInfo = userMapper.getUserInfo(userId);
+            if(userInfo != null){
+                redisService.setUser(userInfo);
+            }
+        }
+        return userInfo;
+    }
     @Override
     public String createWebAdmin(Map<String, String> map){
         String userRole = map.get("userRole");
@@ -59,6 +98,28 @@ public class UserServiceImpl implements UserService {
             if(userMapper.getUserByPhone(userPhone) != null)
                 return "repeat";
             userMapper.createWebAdmin(userRole,userName,userPassword,userId,userPhone, 1);
+            User user = userMapper.getUserInfo(userId);
+            redisService.setUser(user);
+            return userId;
+        }catch (Exception e){
+            return "fail";
+        }
+    }
+    @Override
+    public String createManageAdmin(Map<String, String> map){
+        String userRole = map.get("userRole");
+        String userPassword = map.get("userPassword");
+        String userName = map.get("userName");
+        String userPhone = map.get("userPhone");
+        String userPerm = map.get("userPerm");
+        int nowId = Integer.parseInt(userMapper.getMinId().getUserId());
+        String userId = Integer.toString(nowId - 1);
+        try {
+            if(userMapper.getUserByPhone(userPhone) != null)
+                return "repeat";
+            userMapper.createManageAdmin(userRole,userName,userPassword,userId,userPhone,userPerm, 1);
+            User user = userMapper.getUserInfo(userId);
+            redisService.setUser(user);
             return userId;
         }catch (Exception e){
             return "fail";
@@ -76,9 +137,19 @@ public class UserServiceImpl implements UserService {
     @Override
     public String updatePassword(String userId, String oldPassword, String newPassword){
         try {
-            User user = userMapper.getUserInfo(userId);
+            User user;
+            if(redisService.getUser(userId) != null){
+                user = redisService.getUser(userId);
+            }else {
+                user = userMapper.getUserInfo(userId);
+                if(user != null){
+                    redisService.setUser(user);
+                }
+            }
             if(user.getUserPassword().equals(oldPassword)) {
                 userMapper.updatePassword(userId, newPassword);
+                User user1 = userMapper.getUserInfo(userId);
+                redisService.setUser(user1);
                 return "success";
             }else return "IncorrectPassword";
         }catch (Exception e){
@@ -96,6 +167,7 @@ public class UserServiceImpl implements UserService {
             int nowId = Integer.parseInt(userMapper.getMinId().getUserId());
             user.setUserId(Integer.toString(nowId - 1));
             userMapper.registerUser(user);
+            redisService.setUser(user);
             return 1;  //成功写进数据库
         }catch (Exception ex){
             System.out.print(ex.toString());
@@ -125,6 +197,11 @@ public class UserServiceImpl implements UserService {
             String[] deleteUser = new String[1];
             deleteUser[0] = userId;
             userMapper.deleteUser(deleteUser);
+            for(String user : deleteUser){
+                String userPhone = redisService.getUser(user) == null ? "" : redisService.getUser(user).getUserPhone();
+                redisService.delUser(userPhone);
+                redisService.delUser(user);
+            }
             return 1;
         }catch (Exception e){
             return 0;
@@ -140,6 +217,8 @@ public class UserServiceImpl implements UserService {
             }
             try {
                 userMapper.updateQualifications(qualificationImage, userId);
+                User user = userMapper.getUserInfo(userId);
+                redisService.setUser(user);
                 return 0;
             } catch (Exception e) {
                 return 1;
@@ -156,6 +235,8 @@ public class UserServiceImpl implements UserService {
             }
             try {
                 userMapper.updateQualifications(qualificationImage, userId);
+                User user = userMapper.getUserInfo(userId);
+                redisService.setUser(user);
                 return 0;
             } catch (Exception e) {
                 return 1;
@@ -185,6 +266,10 @@ public class UserServiceImpl implements UserService {
                 userMapper.deleteUser(multipleUserIdArray);
             }else if(handleResult.equals("pass")){
                 userMapper.updateRegisterState(multipleUserIdArray);
+                for(String userId : multipleUserIdArray){
+                    User user = userMapper.getUserInfo(userId);
+                    redisService.setUser(user);
+                }
                 sendMessageToAlias();
             }
             return true;
@@ -196,7 +281,7 @@ public class UserServiceImpl implements UserService {
     public boolean handleProjectBegin(String projectId, String handleResult){
         if(projectId != null && handleResult != null) {
             Project project = projectMapper.getProjectDetail(projectId);
-            String storageList = project.getBoxList();
+            String storageList = projectService.getBasketList(projectId);
             String[] storage = null;
             if(storageList != null)
                 storage = storageList.split(",");
@@ -205,14 +290,19 @@ public class UserServiceImpl implements UserService {
                 if(projectMapper.getProjectDetail(projectId).getProjectState().equals("3"))
                     return false;
                 if (handleResult.equals("refuse")) {
-                    projectMapper.updateState(projectId,2);
+                    projectMapper.updateState(projectId, ProjectStateEnum.getCode("吊篮安装验收").getCode());
+                    Project project1 = projectMapper.getProjectDetail(projectId);
+                    redisService.setProject(project1);
                 } else if (handleResult.equals("pass")) {
-                    projectMapper.updateState(projectId,3);
+                    projectMapper.updateState(projectId,ProjectStateEnum.getCode("进行中").getCode());
                     if(storage != null){
                         for(int i = 0 ; i < storage.length ; i++){
-                            electricStateMapper.updateStateOut(storage[i],3);
+                            if(electricStateMapper.getBoxLog(storage[i]).getStorageState() == 21)
+                                electricStateMapper.updateStateOut(storage[i], ElectricBoxStateEnum.getCode("使用中").getCode());
                         }
                     }
+                    Project project1 = projectMapper.getProjectDetail(projectId);
+                    redisService.setProject(project1);
                     sendBeginToAlias(id,projectId);
                 }
                 return true;
@@ -226,21 +316,25 @@ public class UserServiceImpl implements UserService {
     public boolean handleProjectEnd(String projectId, String handleResult){
         if(projectId != null && handleResult != null) {
             Project project = projectMapper.getProjectDetail(projectId);
-            String storageList = project.getBoxList();
+            String storageList = projectService.getBasketList(projectId);
             String[] storage = null;
             if(storageList != null)
                 storage = storageList.split(",");
             String id = project.getAdminAreaId();
             try {
                 if (handleResult.equals("refuse")) {
-                    projectMapper.updateState(projectId,1);
+                    projectMapper.updateState(projectId,ProjectStateEnum.getCode("待成立项目部").getCode());
+                    Project project1 = projectMapper.getProjectDetail(projectId);
+                    redisService.setProject(project1);
                 } else if (handleResult.equals("pass")) {
-                    projectMapper.updateState(projectId,2);
+                    projectMapper.updateState(projectId,ProjectStateEnum.getCode("吊篮安装验收").getCode());
                     if(storage != null){
                         for(int i = 0 ; i < storage.length ; i++){
-                            electricStateMapper.updateStateOut(storage[i],1);
+                            electricStateMapper.updateStateOut(storage[i],ElectricBoxStateEnum.getCode("待安装").getCode());
                         }
                     }
+                    Project project1 = projectMapper.getProjectDetail(projectId);
+                    redisService.setProject(project1);
                     sendEndToAlias(id);
                 }
                 return true;
@@ -252,13 +346,25 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean handleStoreIn(String projectId, String storeId, String handleResult){
         if(projectId != null && handleResult != null) {
-            Project project = projectMapper.getProjectDetail(projectId);
-            String storageList = project.getBoxList()==null?"":project.getBoxList();
-            String[] storage  = storageList.split(",");
+            Project project;
+            if(projectId.equals("") || projectId == null){
+                project = null;
+            }else {
+                if(redisService.getProject(projectId) != null){
+                    project = redisService.getProject(projectId);
+                }else {
+                    project = projectMapper.getProjectDetail(projectId);
+                    if(project != null){
+                        redisService.setProject(project);
+                    }
+                }
+            }
+            String storageList = projectService.getBasketList(projectId)==null?"":projectService.getBasketList(projectId);
+//            String[] storage  = storageList.split(",");
             String id = project.getAdminAreaId()==null?"":project.getAdminAreaId();
             try {
                 if (handleResult.equals("refuse")) {
-                    electricStateMapper.updateStateOut(storeId, 5);
+                    electricStateMapper.updateStateOut(storeId, ElectricBoxStateEnum.getCode("使用中").getCode());
                 } else if (handleResult.equals("pass")) {
                     if(!id.equals("")){
                         if(storageList.contains(storeId)){
@@ -407,10 +513,23 @@ public class UserServiceImpl implements UserService {
     @Override
     public void sendRepairMessage(String projectId, String deviceId, Timestamp startTime) throws Exception {
         Constants.useOfficial();
+        Project project;
+        if(projectId.equals("") || projectId == null){
+            project = null;
+        }else {
+            if(redisService.getProject(projectId) != null){
+                project = redisService.getProject(projectId);
+            }else {
+                project = projectMapper.getProjectDetail(projectId);
+                if(project != null){
+                    redisService.setProject(project);
+                }
+            }
+        }
         Map<String,String> map = new HashMap<String, String>();
         Sender sender = new Sender(APP_SECRET_KEY);
-        String alias = projectMapper.getProjectDetail(projectId) == null ? "" : projectMapper.getProjectDetail(projectId).getAdminProjectId();
-        String projectName = projectMapper.getProjectDetail(projectId) == null ? "" : projectMapper.getProjectDetail(projectId).getProjectName();
+        String alias = project == null ? "" : project.getAdminProjectId();
+        String projectName = project == null ? "" : project.getProjectName();
         String messagePayload = "这是一条消息";
         String title = "报修";
         String description = "报修吊篮ID" + deviceId;
@@ -436,5 +555,107 @@ public class UserServiceImpl implements UserService {
             user.setUserRole(mapUtils.roleMap.get(user.getUserRole()));
         }
         return list;
+    }
+
+    @Override
+    public int createInstaller(String projectId, String userId, String deviceId, String name, String phone, String accountId) {
+        if(userMapper.createInstaller(projectId, userId, deviceId, name, phone, accountId)) return 1;
+        return 0;
+    }
+
+    @Override
+    public int updateInstaller(String projectId, String userId, String deviceId, String name, String phone, String accountId) {
+        if(userMapper.updateInstaller(projectId,userId,deviceId,name,phone,accountId)) return 1;
+        return 0;
+    }
+
+    @Override
+    public List<JSONObject> getInstaller(String projectId, String userId, String deviceId) {
+        List<JSONObject> jsonObjects = new ArrayList<>();
+        List<Map<String, Object>> maps = userMapper.getInstaller(projectId, userId , deviceId);
+        for (Map<String, Object> map : maps) {
+            jsonObjects.add(new JSONObject(map));
+        }
+        return jsonObjects;
+    }
+
+    @Override
+    public JSONObject getProjectByInstaller(String userId, String projectId, int type) {
+        JSONObject jsonObject = new JSONObject();
+        switch (type){
+            case 1:
+                List<String> list = userMapper.getProjectByInstaller(userId);
+                Set<String> strings = new HashSet<>(list);
+                List<String> projectList = new ArrayList<>(strings);
+                for(String id : projectList){
+                    JSONObject jsonObject1 = new JSONObject();
+                    Project projectDetail;
+                    if(redisService.getProject(id) != null){
+                        projectDetail = redisService.getProject(id);
+                    }else {
+                        projectDetail = projectMapper.getProjectDetail(id);
+                        if(projectDetail != null) {
+                            redisService.setProject(projectDetail);
+                        }
+                    }
+                    jsonObject1.put(id, projectDetail);
+                    jsonObject1.put(id + "allNum", userMapper.sumOfDevice(id));
+                    jsonObject1.put(id + "installedSum",userMapper.sumOfDeviceUn(id));
+                    jsonObject.put(id, jsonObject1);
+                }
+                break;
+            case 2:
+                List<Map<String, Object>> mapList = userMapper.getDeviceListByInstaller(projectId, userId);
+                for (Map<String, Object> map : mapList) {
+                    JSONObject jsonObject1 = new JSONObject();
+                    jsonObject1.put((String)map.get("device_id"), new JSONObject(map));
+                    int user = userMapper.getInstaller(projectId, userId, (String)map.get("device_id")) == null ? 0 : 1;
+                    Map<String, Object> device = userMapper.getAllParts((String)map.get("device_id"));
+                    jsonObject1.put(map.get("device_id") + "_userState", user);
+                    if(device == null) jsonObject1.put(map.get("device_id") + "_deviceState", 0);
+                    else jsonObject1.put(map.get("device_id") + "_deviceState", device.size() == 4 ? 1 : 0);
+                    jsonObject.put((String) map.get("device_id"), jsonObject1);
+                }
+                break;
+        }
+        return jsonObject;
+    }
+
+    @Override
+    public int deleteInstaller(String projectId, String userId,String deviceId, String phone) {
+        if(userMapper.deleteInstaller(projectId, userId, deviceId, phone)) return 1;
+        return 0;
+    }
+
+    @Override
+    public int updateInstallState(String projectId, String userId, String deviceId, int state, int type) {
+        switch (type){
+            case 1:
+                if(userMapper.getDeviceInstallInfo(projectId, userId, deviceId).get("pic_flag").equals("0") || userMapper.getInstaller(projectId,userId,deviceId) == null ||
+                userMapper.getAllParts(deviceId) == null || userMapper.getAllParts(deviceId).size() != 4) return 0;
+                if(userMapper.updateAllInstallState(projectId, userId, deviceId, state)) return 1;
+                else return 0;
+            case 2:
+                if(userMapper.updatePicInstallState(projectId, userId, deviceId, state)) return 1;
+                else return 0;
+        }
+        return 0;
+    }
+
+    @Override
+    public JSONObject getProjectInstallInfoByProjectId(String projectId) {
+        JSONObject jsonObject = new JSONObject();
+        List<Map<String, Object>> mapList = userMapper.getProjectInstallInfoByProjectId(projectId);
+        for (Map<String, Object> map : mapList) {
+            JSONObject jsonObject1 = new JSONObject();
+            jsonObject1.put((String)map.get("device_id"), new JSONObject(map));
+            int user = userMapper.getInstaller(projectId, (String) map.get("user_id") == null ?  "0" : (String) map.get("user_id"), (String)map.get("device_id")) == null ? 0 : 1;
+            Map<String, Object> device = userMapper.getAllParts((String)map.get("device_id"));
+            jsonObject1.put(map.get("device_id") + "_userState", user);
+            if(device == null) jsonObject1.put(map.get("device_id") + "_deviceState", 0);
+            else jsonObject1.put(map.get("device_id") + "_deviceState", device.size() == 4 ? 1 : 0);
+            jsonObject.put((String) map.get("device_id"), jsonObject1);
+        }
+        return jsonObject;
     }
 }

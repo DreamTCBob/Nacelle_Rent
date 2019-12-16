@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.manager.nacelle_rent.dao.ProjectDeviceMapper">
+
+    <insert id="increaseDevice">
+        INSERT INTO project_device(project_id,device_id)
+        VALUES(#{projectId},#{deviceId})
+    </insert>
+
+    <select id="getDeviceList" resultType="String" parameterType="String">
+        SELECT device_id
+        FROM   project_device
+        WHERE  project_id = #{projectId} AND flag = 1
+    </select>
+
+    <select id="getEndDeviceList" resultType="String" parameterType="String">
+        SELECT device_id
+        FROM   project_device
+        WHERE  project_id = #{projectId} AND flag = 0
+    </select>
+
+    <select id="getDevice" resultType="String" parameterType="String">
+        SELECT project_id
+        FROM   project_device
+        WHERE  device_id = #{deviceId} AND flag = 1
+    </select>
+
+    <update id="deleteDeviceByProjectId">
+        UPDATE project_device
+        SET flag = 0, end_time = current_timestamp()
+        WHERE project_id = #{projectId}
+    </update>
+
+    <update id="deleteDeviceByDeviceId">
+        UPDATE project_device
+        SET flag = 0, end_time = current_timestamp()
+        WHERE device_id = #{deviceId} and flag = 1
+    </update>
+
+</mapper>

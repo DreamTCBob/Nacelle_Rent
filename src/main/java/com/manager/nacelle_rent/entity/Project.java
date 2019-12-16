@@ -17,8 +17,14 @@ public class Project {
     private String storeOut;
     private String projectEndUrl;
     private String companyName;
+    private String owner;
+    private String region;
+    private String coordinate;
+    private int servicePeriod;
+    private int deviceNum;
+    private int workerNum;
     private User adminAreaUser;
-    private User adminRentUser;
+    volatile private User adminRentUser;
 
     public String getAdminAreaId() {
         return adminAreaId;
@@ -158,5 +164,53 @@ public class Project {
 
     public void setCompanyName(String companyName) {
         this.companyName = companyName;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getCoordinate() {
+        return coordinate;
+    }
+
+    public void setCoordinate(String coordinate) {
+        this.coordinate = coordinate;
+    }
+
+    public int getDeviceNum() {
+        return deviceNum;
+    }
+
+    public void setDeviceNum(int deviceNum) {
+        this.deviceNum = deviceNum;
+    }
+
+    public int getWorkerNum() {
+        return workerNum;
+    }
+
+    public void setWorkerNum(int workerNum) {
+        this.workerNum = workerNum;
+    }
+
+    public int getServicePeriod() {
+        return servicePeriod;
+    }
+
+    public void setServicePeriod(int servicePeriod) {
+        this.servicePeriod = servicePeriod;
     }
 }

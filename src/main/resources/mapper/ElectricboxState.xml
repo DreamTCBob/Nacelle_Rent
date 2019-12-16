@@ -12,6 +12,14 @@
         <result property="projectId" column="project_id" />
         <result property="storeIn" column="store_in" />
     </resultMap>
+    <select id="sumOfElectricBox" resultType="int">
+        SELECT COUNT(*)
+        FROM electricbox_info
+    </select>
+    <select id="getAllDevice" resultMap="electricBoxState" parameterType="int">
+        SELECT *
+        FROM   electricbox_info
+    </select>
     <select id="getStoreList" resultMap="electricBoxState" parameterType="int">
         SELECT *
         FROM   electricbox_info

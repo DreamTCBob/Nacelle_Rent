@@ -11,6 +11,10 @@
         <result property="userName" column="user_name" />
         <result property="userPhone" column="user_phone" />
         <result property="userImage" column="user_image" />
+        <result property="userAge" column="user_age" />
+        <result property="userSex" column="user_sex" />
+        <result property="userNative" column="user_native" />
+        <result property="userAccount" column="user_account" />
         <result property="isChecked" column="isChecked" />
         <result property="createDate" column="create_date" />
     </resultMap>
@@ -18,6 +22,16 @@
         <result property="userId" column="user_id" />
         <result property="userName" column="user_name" />
     </resultMap>
+
+    <insert id="createInstaller" parameterType="String">
+        INSERT INTO installer_team(project_id, user_id, device_id, name, phone, account_id, start_time)
+        VALUES (#{projectId},#{userId},#{deviceId},#{name},#{phone},#{accountId},current_timestamp)
+    </insert>
+
+    <select id="sumOfUser" resultType="int">
+        SELECT COUNT(*)
+        FROM user_info
+    </select>
 
     <select id="getUserById" resultMap="userResultMap" parameterType="String">
         SELECT user_id, user_password, role_id, user_name
@@ -75,12 +89,12 @@
 
     <insert id="registerUser" parameterType="com.manager.nacelle_rent.entity.User">
         INSERT INTO
-        user_info(user_id, user_name, user_password, role_id, user_phone, user_image)
-        VALUES (#{userId}, #{userName}, #{userPassword}, #{userRole}, #{userPhone}, #{userImage})
+        user_info(user_id, user_name, user_password, role_id, user_phone, user_image, user_age, user_sex, user_native, user_account)
+        VALUES (#{userId}, #{userName}, #{userPassword}, #{userRole}, #{userPhone}, #{userImage}, #{userAge}, #{userSex}, #{userNative}, #{userAccount})
     </insert>
 
     <select id="getRegisterUnChecked" resultMap="userResultMap">
-        SELECT user_id, user_name, user_phone, user_image, create_date, role_id
+        SELECT user_id, user_name, user_phone, user_image, create_date, role_id, perm_id
         FROM user_info
         WHERE isChecked = 0
     </select>
@@ -126,9 +140,20 @@
         WHERE  user_id = #{userId}
     </update>
 
+    <update id="updateInstaller">
+        UPDATE installer_team
+        SET name = #{name}, account_id = #{accountId}
+        WHERE  user_id = #{userId} AND device_id = #{deviceId} AND project_id = #{projectId} AND phone = #{phone}
+    </update>
+
     <insert id="createWebAdmin">
         INSERT INTO user_info(role_id,user_name,user_password,user_id,user_phone,isChecked)
         VALUES(#{userRole},#{userName},#{userPassword},#{userId},#{userPhone},#{isChecked})
+    </insert>
+
+    <insert id="createManageAdmin">
+        INSERT INTO user_info(role_id,user_name,user_password,user_id,user_phone,perm_id,isChecked)
+        VALUES(#{userRole},#{userName},#{userPassword},#{userId},#{userPhone},#{userPerm},#{isChecked})
     </insert>
 
     <insert id="createProjectAdmin">
@@ -141,4 +166,70 @@
         FROM project_admin
         WHERE user_id = #{userId}
     </select>
+
+    <select id="getInstaller" resultType="java.util.HashMap">
+        SELECT *
+        FROM installer_team
+        WHERE project_id = #{projectId} AND user_id = #{userId} AND device_id = #{deviceId}
+    </select>
+
+    <select id="getDeviceInstallInfo" resultType="java.util.HashMap">
+        SELECT *
+        FROM install_info
+        WHERE project_id = #{projectId} AND user_id = #{userId} AND device_id = #{deviceId}
+    </select>
+
+    <select id="getDeviceListByInstaller" resultType="java.util.HashMap">
+        SELECT *
+        FROM install_info
+        WHERE project_id = #{projectId} AND user_id = #{userId}
+    </select>
+
+    <select id="getProjectInstallInfoByProjectId" resultType="java.util.HashMap">
+        SELECT *
+        FROM install_info
+        WHERE project_id = #{projectId}
+    </select>
+
+    <select id="getProjectByInstaller" resultType="String">
+        SELECT project_id
+        FROM install_info
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="sumOfDevice" resultType="int">
+        SELECT COUNT(*)
+        FROM install_info
+        WHERE project_id = #{projectId}
+    </select>
+
+    <select id="sumOfDeviceUn" resultType="int">
+        SELECT COUNT(*)
+        FROM install_info
+        WHERE project_id = #{projectId} AND flag = 1
+    </select>
+
+    <delete id="deleteInstaller">
+        DELETE FROM installer_team
+        WHERE project_id = #{projectId} AND user_id = #{userId} AND device_id = #{deviceId} AND phone = #{phone}
+    </delete>
+
+    <update id="updateAllInstallState">
+        UPDATE install_info
+        SET flag = #{state}, end_time = current_timestamp
+        WHERE  user_id = #{userId} AND device_id = #{deviceId} AND project_id = #{projectId}
+    </update>
+
+    <update id="updatePicInstallState">
+        UPDATE install_info
+        SET pic_flag = #{state}
+        WHERE  user_id = #{userId} AND device_id = #{deviceId} AND project_id = #{projectId}
+    </update>
+
+    <select id="getAllParts" resultType="java.util.HashMap">
+        SELECT *
+        FROM electricbox_config
+        WHERE device_id = #{deviceId}
+    </select>
+
 </mapper>

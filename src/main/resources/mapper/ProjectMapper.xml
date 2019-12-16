@@ -15,17 +15,30 @@
         <result property="adminAreaId" column="admin_area_id" />
         <result property="adminRentId" column="admin_rent_id" />
         <result property="adminProjectId" column="admin_project_id" />
-        <result property="worker" column="worker" />
-        <result property="boxList" column="boxList" />
+        <result property="workerNum" column="worker_num" />
+        <result property="deviceNum" column="device_num" />
         <result property="storeOut" column="store_out" />
         <result property="projectEndUrl" column="project_end_url" />
         <result property="projectBuilders" column="project_builders" />
+        <result property="owner" column="owner" />
+        <result property="region" column="region" />
+        <result property="coordinate" column="coordinate" />
+        <result property="servicePeriod" column="service_period" />
         <association property="adminAreaUser" javaType="com.manager.nacelle_rent.entity.User">
             <result property="userName" column="user_name"/>
         </association>
     </resultMap>
+    <resultMap id="installInfoMap" type="com.manager.nacelle_rent.entity.InstallInfo">
+        <result property="projectId" column="project_id" />
+        <result property="id" column="id" />
+        <result property="userId" column="user_id" />
+        <result property="deviceId" column="device_id" />
+        <result property="startTime" column="start_time" />
+        <result property="endTime" column="end_time" />
+        <result property="flag" column="flag" />
+    </resultMap>
     <select id="getProjectList" resultMap="projectResultMap" parameterType="int">
-        SELECT project_id, project_name, project_state, project_start, project_end, admin_area_id, project_builders, boxList, store_out, project_cert_url
+        SELECT project_id, project_name, project_state, project_start, project_end, admin_area_id, project_builders, device_num, store_out, project_cert_url
         FROM   project_info
         WHERE  project_state= #{flag}
     </select>
@@ -41,28 +54,63 @@
         FROM   project_info
     </select>
 
-    <select id="getProjectId" resultMap="projectResultMap" parameterType="String">
-        SELECT project_id
-        FROM   project_info
-        WHERE  FIND_IN_SET(#{userId},worker)
+    <select id="sumOfProject" resultType="int">
+        SELECT COUNT(*)
+        FROM project_info
     </select>
 
-    <select id="getProjectIdByStore" resultMap="projectResultMap" parameterType="String">
-        SELECT project_id
-        FROM   project_info
-        WHERE  FIND_IN_SET(#{storeId},boxList)
+    <select id="getAlarmInfoByDeviceId" resultType="java.util.HashMap">
+        SELECT *
+        FROM alarm_history
+        WHERE device_id = #{deviceId}
     </select>
 
-    <select id="checkStorage" resultMap="projectResultMap" parameterType="String">
-        SELECT project_id
-        FROM   project_info
-        WHERE  FIND_IN_SET(#{storageId},boxList)
+    <select id="getAlarmInfoByProjectId" resultType="java.util.HashMap">
+        SELECT *
+        FROM alarm_history
+        WHERE project_id = #{projectId}
     </select>
+
+    <select id="getElectricBoxStopByProjectId" resultType="java.util.HashMap">
+        SELECT *
+        FROM electricbox_stop
+        WHERE project_id = #{projectId}
+    </select>
+
+    <select id="getPlaneGraphInfo" resultType="java.util.HashMap">
+        SELECT *
+        FROM project_device
+        WHERE project_id = #{projectId} AND building_id = #{buildingNum}
+    </select>
+
+    <select id="getProjectPlaneGraphInfo" resultType="java.util.HashMap">
+        SELECT *
+        FROM project_plane_graph
+        WHERE project_id = #{projectId}
+    </select>
+
+    <!--<select id="getProjectId" resultMap="projectResultMap" parameterType="String">-->
+        <!--SELECT project_id-->
+        <!--FROM   project_info-->
+        <!--WHERE  FIND_IN_SET(#{userId},worker)-->
+    <!--</select>-->
+
+    <!--<select id="getProjectIdByStore" resultMap="projectResultMap" parameterType="String">-->
+        <!--SELECT project_id-->
+        <!--FROM   project_info-->
+        <!--WHERE  FIND_IN_SET(#{storeId},boxList)-->
+    <!--</select>-->
+
+    <!--<select id="checkStorage" resultMap="projectResultMap" parameterType="String">-->
+        <!--SELECT project_id-->
+        <!--FROM   project_info-->
+        <!--WHERE  FIND_IN_SET(#{storageId},boxList)-->
+    <!--</select>-->
 
     <select id="getProjectIdByAdmin" resultMap="projectResultMap" parameterType="String">
         SELECT project_id
         FROM   project_info
-        WHERE  admin_rent_id = #{adminRentId}
+        WHERE  admin_rent_id = #{adminRentId} AND project_state != 4
     </select>
 
     <select id="getProjectDetail" resultMap="projectResultMap" parameterType="String">
@@ -76,6 +124,21 @@
         VALUES(#{projectId},#{projectName},#{projectStart},#{projectContractUrl},#{adminAreaId},#{adminRentId})
     </insert>
 
+    <insert id="insertInstallInfo">
+        INSERT INTO install_info(user_id, project_id, device_id)
+        VALUES(#{userId}, #{projectId}, #{deviceId})
+    </insert>
+
+    <insert id="createElectricBoxStopInfo">
+        INSERT INTO electricbox_stop_info(project_id, manager_id, number)
+        VALUES(#{projectId}, #{managerId}, #{number})
+    </insert>
+
+    <insert id="createElectricBoxStop">
+        INSERT INTO electricbox_stop(project_id, device_id)
+        VALUES(#{projectId}, #{deviceId})
+    </insert>
+
     <update id="updateProject">
         UPDATE project_info
         SET project_id=#{projectId}, project_name=#{projectName}, project_start=#{projectStart},
@@ -85,7 +148,25 @@
 
     <update id="increaseBox">
         UPDATE project_info
-        SET boxList = #{boxList}
+        SET device_num = device_num + 1
+        WHERE project_id= #{projectId}
+    </update>
+
+    <update id="decreaseBox">
+        UPDATE project_info
+        SET device_num = device_num - 1
+        WHERE project_id= #{projectId}
+    </update>
+
+    <update id="increaseWorker">
+        UPDATE project_info
+        SET worker_num = worker_num + 1
+        WHERE project_id= #{projectId}
+    </update>
+
+    <update id="decreaseWorker">
+        UPDATE project_info
+        SET worker_num = worker_num - 1
         WHERE project_id= #{projectId}
     </update>
 
@@ -95,15 +176,15 @@
         WHERE project_id= #{projectId}
     </update>
 
-    <update id="increaseWorker">
-        UPDATE project_info
-        SET worker = #{userList}
-        WHERE project_id= #{projectId}
-    </update>
-
     <update id="installApply">
         UPDATE project_info
         SET project_cert_url = #{projectCertUrl},store_out = #{storeOut}
+        WHERE project_id= #{projectId}
+    </update>
+
+    <update id="updateKeyWord">
+        UPDATE project_info
+        SET owner = #{owner}, region = #{region}, coordinate = #{coordinate}, service_period = #{servicePeriod}
         WHERE project_id= #{projectId}
     </update>
 
@@ -157,6 +238,29 @@
         WHERE  project_id= #{projectId}
     </select>
 
+    <select id="getProjectByVague" resultType="String" parameterType="String">
+        SELECT project_id
+        FROM   project_info
+        WHERE  INSTR(project_name,#{subString}) > 0 OR INSTR(region,#{subString}) > 0
+    </select>
+
+    <select id="getProjectListByRegion" resultMap="projectResultMap">
+        SELECT *
+        FROM   project_info
+        WHERE  INSTR(region,#{regionKey}) limit #{pageNum},5
+    </select>
+
+    <select id="getProjectListByRegionAll" resultMap="projectResultMap">
+        SELECT *
+        FROM   project_info
+        WHERE  INSTR(region,#{regionKey})
+    </select>
+
+    <select id="getProjectListByPage" resultMap="projectResultMap" parameterType="int">
+        SELECT *
+        FROM   project_info limit #{pageNum},5
+    </select>
+
     <delete id="deleteProject">
         DELETE FROM project_info
         WHERE project_id in
@@ -164,4 +268,33 @@
             #{item}
         </foreach>
     </delete>
+
+    <update id="updatePlaneGraphInfo">
+        UPDATE project_device
+        SET location_id = #{locationId}, location = #{location},building_id = #{buildingId}
+        WHERE project_id = #{projectId} AND device_id = #{deviceId} AND flag = 1
+    </update>
+
+    <insert id="uploadPlaneGraphInfo">
+        INSERT INTO project_device(project_id, device_id, building_id, location_id, start_time, location)
+        VALUES(#{projectId}, #{deviceId}, #{buildingId}, #{locationId}, current_timestamp, #{location})
+    </insert>
+
+    <select id="getPlaneGraphAB" parameterType="String" resultType="java.util.HashMap">
+        SELECT *
+        FROM project_device
+        WHERE project_id = #{projectId} AND device_id = #{deviceId} AND building_id = #{buildingId} AND location_id = #{locationId}
+    </select>
+
+    <select id="getProjectPlaneGraphOne" parameterType="String" resultType="java.util.HashMap">
+        SELECT *
+        FROM project_device
+        WHERE project_id = #{projectId} AND building_id = #{buildingId} AND location_id = #{locationId}
+    </select>
+
+    <insert id="uploadProjectPlaneGraphInfo">
+        INSERT INTO project_plane_graph(project_id, building_id, location, time)
+        VALUES (#{projectId}, #{buildingId}, #{location}, current_timestamp)
+    </insert>
+
 </mapper>

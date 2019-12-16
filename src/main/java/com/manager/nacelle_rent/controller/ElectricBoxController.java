@@ -11,6 +11,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
@@ -37,8 +38,10 @@ public class ElectricBoxController {
             try {
                 RealTimeData realTimeData = electricBoxMapper.getRealTimeDataById(deviceId);
                 jsonObject.put("realTimeData",realTimeData);
+                jsonObject.put("isAllowed",true);
             }catch(Exception ex){
                 jsonObject.put("fail","dataError");
+                jsonObject.put("isAllowed",false);
             }
         }else{
             jsonObject.put("isAllowed",false);
@@ -65,4 +68,60 @@ public class ElectricBoxController {
         }
         return jsonObject;
     }
+
+    @ApiOperation(value = "新建安装信息" ,  notes="")
+    @PostMapping("/createElectricBoxConfig")
+    public JSONObject createElectricBoxConfig(HttpServletRequest request, @RequestParam String deviceId,
+                                              @RequestParam String type, @RequestParam String number){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            int result = electricBoxService.createElectricBoxConfig(deviceId, type, number);
+            if(result == 1)
+                jsonObject.put("create","success");
+            else
+                jsonObject.put("create","fail");
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "获取安装信息" ,  notes="")
+    @GetMapping("/getElectricBoxConfig")
+    public JSONObject getElectricBoxConfig(HttpServletRequest request, @RequestParam String deviceId){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            JSONObject result = electricBoxService.getElectricBoxConfig(deviceId);
+            jsonObject.put("electricBoxConfig",result);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "删除安装信息" ,  notes="")
+    @PostMapping("/deleteElectricBoxConfig")
+    public JSONObject deleteElectricBoxConfig(HttpServletRequest request, @RequestParam String deviceId, @RequestParam String type){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            int result = electricBoxService.deleteElectricBoxConfig(deviceId, type);
+            if(result == 1)
+                jsonObject.put("delete","success");
+            else
+                jsonObject.put("delete","fail");
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
 }

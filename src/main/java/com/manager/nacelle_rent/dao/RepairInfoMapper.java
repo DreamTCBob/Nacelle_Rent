@@ -21,4 +21,6 @@ public interface RepairInfoMapper {
     List<RepairBoxInfo> getRepairEndInfoOne(@Param("deviceId") String deviceId);
 
     List<RepairBoxInfo> getRepairInfoOne(@Param("deviceId") String deviceId);
+
+    int getRepairBoxNum(@Param("projectId") String projectId);
 }

@@ -8,8 +8,8 @@ import java.io.*;
  * 文件上传工具包
  */
 public class FileUtil {
-//    private static String localFilePath = "d:/";
-    private static String localFilePath = "/root/nacelle_rent/";
+    private static String localFilePath = "d:/";
+//    private static String localFilePath = "/var/ftp/nacelleRent/contract/";
     /**
      *
      * @param file 文件
@@ -56,7 +56,7 @@ public class FileUtil {
 
     public static String readFile(String filePath){
         try{
-            BufferedReader reader = new BufferedReader(new FileReader(filePath));
+            BufferedReader reader = new BufferedReader(new FileReader(/*localFilePath+*/filePath));
             String tempString = null;
             StringBuffer resultString = new StringBuffer();
             int line = 1;

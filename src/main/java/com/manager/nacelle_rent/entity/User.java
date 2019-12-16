@@ -14,6 +14,10 @@ public class User {
     private String userPhone;
     private String userImage;
     private String createDate;
+    private String userSex;
+    private String userNative;
+    private String userAccount;
+    private int userAge;
     private boolean isChecked;
     public static String userToJson(User user){
         String roleName = mapUtils.roleMap.get(user.getUserRole());
@@ -23,6 +27,7 @@ public class User {
         jsonObject.put("userName", user.getUserName());
         jsonObject.put("userPhone",user.getUserPhone());
         jsonObject.put("userImage",user.getUserImage());
+        jsonObject.put("userPerm",user.getUserPerm());
         jsonObject.put("userRole",roleName);
         jsonObject.put("createDate",new Date().getTime());
         return jsonObject.toJSONString();
@@ -32,7 +37,12 @@ public class User {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", 0);
         jsonObject.put("userId",user.getUserId());
+        jsonObject.put("userAge",user.getUserAge());
+        jsonObject.put("userNative",user.getUserNative());
+        jsonObject.put("userSex",user.getUserSex());
         jsonObject.put("userName", user.getUserName());
+        jsonObject.put("userAccount", user.getUserAccount());
+        jsonObject.put("userPerm",user.getUserPerm());
         jsonObject.put("userPhone",user.getUserPhone());
         jsonObject.put("userImage",user.getUserImage());
         jsonObject.put("userRole",roleName);
@@ -109,5 +119,37 @@ public class User {
 
     public void setCreateDate(String createDate) {
         this.createDate = createDate;
+    }
+
+    public String getUserSex() {
+        return userSex;
+    }
+
+    public void setUserSex(String userSex) {
+        this.userSex = userSex;
+    }
+
+    public String getUserNative() {
+        return userNative;
+    }
+
+    public void setUserNative(String userNative) {
+        this.userNative = userNative;
+    }
+
+    public int getUserAge() {
+        return userAge;
+    }
+
+    public void setUserAge(int userAge) {
+        this.userAge = userAge;
+    }
+
+    public String getUserAccount() {
+        return userAccount;
+    }
+
+    public void setUserAccount(String userAccount) {
+        this.userAccount = userAccount;
     }
 }

@@ -3,12 +3,22 @@ package com.manager.nacelle_rent.service.Impl;
 import com.alibaba.fastjson.JSONObject;
 import com.manager.nacelle_rent.dao.*;
 import com.manager.nacelle_rent.entity.*;
+import com.manager.nacelle_rent.enums.ElectricBoxStateEnum;
+import com.manager.nacelle_rent.enums.ProjectStateEnum;
 import com.manager.nacelle_rent.service.ProjectService;
+import com.manager.nacelle_rent.service.RedisService;
 import com.manager.nacelle_rent.service.UserService;
 import com.manager.nacelle_rent.service.WorkTimeLogService;
+import com.manager.nacelle_rent.utils.RedisUtil;
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPReply;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -16,7 +26,13 @@ import java.util.*;
 @Service
 public class ProjectServiceImpl implements ProjectService{
     @Autowired
+    RedisUtil redisUtil;
+    @Autowired
     private ProjectMapper projectMapper;
+    @Autowired
+    private ProjectDeviceMapper projectDeviceMapper;
+    @Autowired
+    private ProjectWorkerMapper projectWorkerMapper;
     @Autowired
     private UserMapper userMapper;
     @Autowired
@@ -39,6 +55,17 @@ public class ProjectServiceImpl implements ProjectService{
     private RepairInfoMapper repairInfoMapper;
     @Autowired
     private ConfigurationList configurationList;
+    @Autowired
+    private RedisService redisService;
+
+    @Value("${FTPFileURL}")
+    private String FTPFileURL;
+    @Value("${FTPUserName}")
+    private String FTPUserName;
+    @Value("${FTPUserPassword}")
+    private String FTPUserPassword;
+    @Value("${FTPPlaneGraph}")
+    private String FTPPlaneGraph;
 
     private String[] projectStateList = {"草稿","待成立项目部","吊篮已安装","计费中","已结束","证书待审核","清单待配置","清单待审核"};
 
@@ -48,6 +75,8 @@ public class ProjectServiceImpl implements ProjectService{
         for(int i = 0; i < projectList.size();i++){
 
             Project project = projectList.get(i);
+            String boxList = getBasketList(project.getProjectId());
+            project.setBoxList(boxList);
             project.setProjectState(projectStateList[Integer.parseInt(project.getProjectState())]);
             if(project.getProjectEnd() == null){
                 project.setProjectEnd("—");
@@ -57,6 +86,141 @@ public class ProjectServiceImpl implements ProjectService{
     }
 
     @Override
+    public List<Project> getProjectByVague(String subString){
+        List<String> projectIdList = projectMapper.getProjectByVague(subString);
+        List<Project> projectList = new ArrayList<>();
+        for(String projectId : projectIdList){
+            Project project;
+            if(projectId.equals("")){
+                project = null;
+            }else {
+                if(redisService.getProject(projectId) != null){
+                    project = redisService.getProject(projectId);
+                }else {
+                    project = projectMapper.getProjectDetail(projectId);
+                    if(project != null){
+                        redisService.setProject(project);
+                    }
+                }
+                String companyName = projectMapper.searchCompany(projectId);
+                if(project != null)
+                    project.setCompanyName(companyName);
+                projectList.add(project);
+            }
+        }
+        return projectList;
+    }
+
+    @Override
+    public List<Project> getProjectListByKey(String keyWord, int flag, int pageNum){
+        if(!keyWord.equals("") && flag != 0){
+            List<Project> projectList;
+            switch (flag){
+                case 1://////按照地区检索项目列表
+                {
+                    int pageNumM = (pageNum - 1) * 5;
+                    projectList = projectMapper.getProjectListByRegion(keyWord, pageNumM);
+                    break;
+                }
+                case 11://////按地区检索全部
+                {
+                    projectList = projectMapper.getProjectListByRegionAll(keyWord);
+                    break;
+                }
+                case 2://////分页查询
+                {
+                    int pageNumM = (pageNum - 1) * 5;
+                    projectList = projectMapper.getProjectListByPage(pageNumM);
+                    break;
+                }
+                case 30:///////某地区已结束的项目
+                {
+                    List<Project> projectListByRegionAll = projectMapper.getProjectListByRegionAll(keyWord);
+                    List<Project> rightProjectList = judgeProjectState(projectListByRegionAll,0);
+                    int startNum = (pageNum - 1) * 5;
+                    projectList = new ArrayList<>();
+                    for(int i = startNum ; i < (startNum + 5) ; i++){
+                        if(i >= rightProjectList.size()) continue;
+                        projectList.add(rightProjectList.get(i));
+                    }
+                    break;
+                }
+                case 31:///////某地区安装中的项目
+                {
+                    List<Project> projectListByRegionAll = projectMapper.getProjectListByRegionAll(keyWord);
+                    List<Project> rightProjectList = judgeProjectState(projectListByRegionAll,1);
+                    int startNum = (pageNum - 1) * 5;
+                    projectList = new ArrayList<>();
+                    for(int i = startNum ; i < (startNum + 5) ; i++){
+                        if(i >= rightProjectList.size()) continue;
+                        projectList.add(rightProjectList.get(i));
+                    }
+                    break;
+                }
+                case 32:///////某地区使用中的项目
+                {
+                    List<Project> projectListByRegionAll = projectMapper.getProjectListByRegionAll(keyWord);
+                    List<Project> rightProjectList = judgeProjectState(projectListByRegionAll,2);
+                    int startNum = (pageNum - 1) * 5;
+                    projectList = new ArrayList<>();
+                    for(int i = startNum ; i < (startNum + 5) ; i++){
+                        if(i >= rightProjectList.size()) continue;
+                        projectList.add(rightProjectList.get(i));
+                    }
+                    break;
+                }
+                default: {
+                    projectList = null;
+                }
+            }
+            return projectList;
+        }else return null;
+    }
+    private List<Project> judgeProjectState(List<Project> projectList, int state){
+        List<Project> projects = new ArrayList<>();
+        switch (state){
+            case 0:///已结束
+            {
+                for(Project project : projectList){
+                    List<String> endDeviceList = projectDeviceMapper.getEndDeviceList(project.getProjectId());
+                    if(endDeviceList.size() != 0) projects.add(project);
+                }
+                break;
+            }
+            case 1:///安装中
+            {
+                for(Project project : projectList){
+                    List<String> deviceList = projectDeviceMapper.getDeviceList(project.getProjectId());
+                    for(String deviceId : deviceList){
+                        if(deviceId.equals("A") || deviceId.equals("B")) continue;
+                        int deviceState = electricStateMapper.getBoxLog(deviceId).getStorageState();
+                        if(deviceState == ElectricBoxStateEnum.getCode("待安装").getCode() || deviceState == ElectricBoxStateEnum.getCode("正在安装").getCode())
+                            projects.add(project);
+                    }
+                }
+                break;
+            }
+            case 2:///使用中
+            {
+                for(Project project : projectList){
+                    List<String> deviceList = projectDeviceMapper.getDeviceList(project.getProjectId());
+                    for(String deviceId : deviceList){
+                        if(deviceId.equals("A") || deviceId.equals("B")) continue;
+                        int deviceState = electricStateMapper.getBoxLog(deviceId).getStorageState();
+                        if(deviceState == ElectricBoxStateEnum.getCode("待审核").getCode()
+                                || deviceState == ElectricBoxStateEnum.getCode("使用中").getCode()
+                                || deviceState == ElectricBoxStateEnum.getCode("待报停").getCode()
+                                || deviceState == ElectricBoxStateEnum.getCode("报停审核").getCode())
+                            projects.add(project);
+                    }
+                }
+                break;
+            }
+            default: projects = null;
+        }
+        return projects == null ? null : new ArrayList<>(new HashSet<>(projects));
+    }
+    @Override
     public List<JSONObject> getProjectListAll(){
         List<Project> projectList = projectMapper.getProjectListAll();
         List<JSONObject> list = new ArrayList<>();
@@ -64,11 +228,36 @@ public class ProjectServiceImpl implements ProjectService{
             if(!projectList.get(i).getProjectState().equals("0")) {
                 JSONObject jsonObject = new JSONObject();
                 Project project = projectList.get(i);
-                User user = userMapper.getUserById(project.getAdminAreaId());
-                User user1 = userMapper.getUserById(project.getAdminRentId());
-                User user2 = userMapper.getUserById(project.getAdminProjectId());
-                String[] boxList = project.getBoxList().equals("") ? null : project.getBoxList().split(",");
-                String[] worker = project.getWorker().equals("")? null : project.getWorker().split(",");
+//                User user = userMapper.getUserById(project.getAdminAreaId());
+                User user;
+                if(redisService.getUser(project.getAdminAreaId()) != null){
+                    user = redisService.getUser(project.getAdminAreaId());
+                }else {
+                    user = userMapper.getUserInfo(project.getAdminAreaId());
+                    if(user != null){
+                        redisService.setUser(user);
+                    }
+                }
+                User user1;
+                if(redisService.getUser(project.getAdminRentId()) != null){
+                    user1 = redisService.getUser(project.getAdminRentId());
+                }else {
+                    user1 = userMapper.getUserInfo(project.getAdminRentId());
+                    if(user1 != null){
+                        redisService.setUser(user1);
+                    }
+                }
+                User user2;
+                if(redisService.getUser(project.getAdminProjectId()) != null){
+                    user2 = redisService.getUser(project.getAdminProjectId());
+                }else {
+                    user2 = userMapper.getUserInfo(project.getAdminProjectId());
+                    if(user2 != null){
+                        redisService.setUser(user2);
+                    }
+                }
+                String[] boxList = getBasketList(project.getProjectId()).split(",");
+                String[] worker = getWorkerList(project.getProjectId()).equals("") ? null : getWorkerList(project.getProjectId()).split(",");
                 switch (projectList.get(i).getProjectState()){
                     case "21":
                         project.setProjectState(projectStateList[5]);
@@ -108,6 +297,7 @@ public class ProjectServiceImpl implements ProjectService{
                 jsonObject.put("projectStart",project.getProjectStart());
                 jsonObject.put("projectState",project.getProjectState());
                 jsonObject.put("storeOut",project.getStoreOut());
+                jsonObject.put("coordinate",project.getCoordinate());
                 list.add(jsonObject);
             }
         }
@@ -117,11 +307,13 @@ public class ProjectServiceImpl implements ProjectService{
     @Override
     public List<JSONObject> getProjectList2(int flag){
         List<JSONObject> returnList = new ArrayList<>();
-        List<Project> projectList = projectMapper.getProjectList(flag);
-        List<Project> projectList1 = projectMapper.getProjectList(21);
+        List<Project> projectList = projectMapper.getProjectList(ProjectStateEnum.getCode("吊篮安装验收").getCode());
+        List<Project> projectList1 = projectMapper.getProjectList(ProjectStateEnum.getCode("安监证书验收").getCode());
         for(int i = 0; i < projectList.size();i++){
             JSONObject jsonObject = new JSONObject();
             Project project = projectList.get(i);
+            String boxList = getBasketList(project.getProjectId());
+            project.setBoxList(boxList);
             project.setProjectState(projectStateList[Integer.parseInt(project.getProjectState())]);
             if(project.getProjectEnd() == null){
                 project.setProjectEnd("—");
@@ -140,11 +332,14 @@ public class ProjectServiceImpl implements ProjectService{
             jsonObject.put("imageList", imageList);
             jsonObject.put("certificate",project.getProjectCertUrl().split(","));
             jsonObject.put("uploadTime",project.getProjectStart());
+            jsonObject.put("coordinate",project.getCoordinate());
             returnList.add(jsonObject);
         }
         for(int i = 0; i < projectList1.size();i++){
             JSONObject jsonObject = new JSONObject();
             Project project = projectList1.get(i);
+            String boxList = getBasketList(project.getProjectId());
+            project.setBoxList(boxList);
             project.setProjectState(projectStateList[5]);
             if(project.getProjectEnd() == null){
                 project.setProjectEnd("—");
@@ -163,6 +358,7 @@ public class ProjectServiceImpl implements ProjectService{
             jsonObject.put("imageList", imageList);
             jsonObject.put("certificate",project.getProjectCertUrl().split(","));
             jsonObject.put("uploadTime",project.getProjectStart());
+            jsonObject.put("coordinate",project.getCoordinate());
             returnList.add(jsonObject);
         }
         return returnList;
@@ -172,7 +368,9 @@ public class ProjectServiceImpl implements ProjectService{
     @Override
     public List<JSONObject> getStoreList(int flag){
         List<JSONObject> returnList = new ArrayList<>();
-        List<ElectricBoxState> list = electricStateMapper.getStoreList(flag);
+        List<ElectricBoxState> list;
+        if(flag == 0) list = electricStateMapper.getAllDevice();
+        else list = electricStateMapper.getStoreList(flag);
         for(int i = 0; i < list.size();i++){
             try {
                 JSONObject jsonObject = new JSONObject();
@@ -180,21 +378,43 @@ public class ProjectServiceImpl implements ProjectService{
                 if (electricBoxState.getStoreIn() == null) {
                     electricBoxState.setStoreIn("");
                 }
-                Project project = projectMapper.getProjectIdByStore(electricBoxState.getDeviceId());
-                String projectId = project == null ? "" : project.getProjectId();
+                String projectId = projectDeviceMapper.getDevice(electricBoxState.getDeviceId()).size() == 0 ? "" :
+                        projectDeviceMapper.getDevice(electricBoxState.getDeviceId()).get(0);
+                Project project;
+                if(projectId.equals("")){
+                    project = null;
+                }else {
+                    if(redisService.getProject(projectId) != null){
+                        project = redisService.getProject(projectId);
+                    }else {
+                        project = projectMapper.getProjectDetail(projectId);
+                        if(project != null){
+                            redisService.setProject(project);
+                        }
+                    }
+                }
+                double longitude = electricBoxMapper.getRealTimeDataById(electricBoxState.getDeviceId()) == null ? 0 :
+                        electricBoxMapper.getRealTimeDataById(electricBoxState.getDeviceId()).getLongitude();
+                double latitude = electricBoxMapper.getRealTimeDataById(electricBoxState.getDeviceId()) == null ? 0 :
+                        electricBoxMapper.getRealTimeDataById(electricBoxState.getDeviceId()).getLatitude();
                 String projectName = project == null ? "" : project.getProjectName();
-                String userId = projectMapper.getProjectDetail(electricBoxState.getProjectId()).getAdminAreaId();
-                String userName = userMapper.getUserById(userId).getUserName();
+                String userId = project == null ? "" : project.getAdminAreaId();
+                String userName = userMapper.getUserById(userId) == null ? "" : userMapper.getUserById(userId).getUserName();
                 String res;
                 SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 res = simpleDateFormat.format(electricBoxState.getDate());
+                jsonObject.put("longitude",longitude);
+                jsonObject.put("latitude",latitude);
                 jsonObject.put("projectId", projectId);
                 jsonObject.put("projectName", projectName);
                 jsonObject.put("userId", userId);
                 jsonObject.put("userName", userName);
                 jsonObject.put("deviceId", electricBoxState.getDeviceId());
                 jsonObject.put("uploadTime", res);
+                jsonObject.put("alarm",electricBoxState.getAlarm());
                 jsonObject.put("verificationImage", electricBoxState.getStoreIn().split(",")[0]);
+                jsonObject.put("electricBoxState",electricBoxState.getStorageState());
+                jsonObject.put("workingState",electricBoxState.getWorkingState());
                 returnList.add(jsonObject);
             }catch (Exception e){
                 e.printStackTrace();
@@ -203,28 +423,66 @@ public class ProjectServiceImpl implements ProjectService{
         return returnList;
 
     }
+
     @Override
-    public List<Project> getAllProjectByAdmin(String userId){
+    public JSONObject getAllProjectByAdmin(String userId){
         List<Project> projectList = projectMapper.getAllProjectByAdmin(userId);
-        return projectList;
+        JSONObject jsonObject = new JSONObject();
+        List<Project> installingProject = new ArrayList<>();
+        List<Project> operatingProject = new ArrayList<>();
+        List<Project> endProject = new ArrayList<>();
+        for(Project project : projectList){
+            String companyName = projectMapper.searchCompany(project.getProjectId()) == null ? "" : projectMapper.searchCompany(project.getProjectId());
+            project.setCompanyName(companyName);
+            List<String> deviceList = projectDeviceMapper.getDeviceList(project.getProjectId());
+            for(String deviceId : deviceList){
+                if(deviceId.equals("A") || deviceId.equals("B")) continue;
+                int deviceState = electricStateMapper.getBoxLog(deviceId).getStorageState();
+                if(deviceState == ElectricBoxStateEnum.getCode("待安装").getCode() || deviceState == ElectricBoxStateEnum.getCode("正在安装").getCode())
+                    installingProject.add(project);
+                if(deviceState == ElectricBoxStateEnum.getCode("待审核").getCode()
+                        || deviceState == ElectricBoxStateEnum.getCode("使用中").getCode()
+                        || deviceState == ElectricBoxStateEnum.getCode("待报停").getCode()
+                                || deviceState == ElectricBoxStateEnum.getCode("报停审核").getCode())
+                    operatingProject.add(project);
+            }
+//            List<String> endDeviceList = projectDeviceMapper.getEndDeviceList(project.getProjectId());
+            if(Integer.parseInt(project.getProjectState()) == ProjectStateEnum.getCode("已结束").getCode()) endProject.add(project);
+        }
+        jsonObject.put("installingProjectList",new ArrayList<>(new HashSet<>(installingProject)));
+        jsonObject.put("operatingProjectList",new ArrayList<>(new HashSet<>(operatingProject)));
+        jsonObject.put("endProjectList",new ArrayList<>(new HashSet<>(endProject)));
+        return jsonObject;
     }
 
     @Override
     public String getBasketList(String projectId){
-        String basketList = null;
-        Project project = projectMapper.getProjectDetail(projectId);
-        if(project != null)
-            basketList = project.getBoxList();
+        String basketList = "";
+        List<String> device = projectDeviceMapper.getDeviceList(projectId);
+        for(String deviceId : device){
+            if(!deviceId.equals("A") && !deviceId.equals("B"))
+                basketList += deviceId + ",";
+        }
         return basketList;
     }
 
     @Override
-    public String getProjectId(String userId){
-        List<Project> project = projectMapper.getProjectId(userId);
-        if(project.size()!=0)
-            return project.get(0).getProjectId();
-        else return "";
+    public String getWorkerList(String projectId){
+        String workerList = "";
+        List<String> worker = projectWorkerMapper.getWorkerList(projectId);
+        for(String userId : worker){
+            workerList += userId + ",";
+        }
+        return workerList;
     }
+
+//    @Override
+//    public String getProjectId(String userId){
+//        List<Project> project = projectMapper.getProjectId(userId);
+//        if(project.size()!=0)
+//            return project.get(0).getProjectId();
+//        else return "";
+//    }
 
     @Override
     public String getProjectIdByAdmin(String userId){
@@ -278,13 +536,25 @@ public class ProjectServiceImpl implements ProjectService{
         String areaAdmin = null;
         String rentAdmin = null;
         String worker = null;
-        Project project = projectMapper.getProjectDetail(projectId);
+        Project project;
+        if(projectId.equals("") || projectId == null){
+            project = null;
+        }else {
+            if(redisService.getProject(projectId) != null){
+                project = redisService.getProject(projectId);
+            }else {
+                project = projectMapper.getProjectDetail(projectId);
+                if(project != null){
+                    redisService.setProject(project);
+                }
+            }
+        }
         if(project != null)
             areaAdmin = project.getAdminAreaId();
         if(project != null)
             rentAdmin = project.getAdminRentId();
         if(project != null)
-            worker = project.getWorker();
+            worker = getWorkerList(project.getProjectId());
         List<User> userList = new ArrayList<>();
         userList.add(userService.getUserInfo(areaAdmin));
         userList.add(userService.getUserInfo(rentAdmin));
@@ -300,15 +570,49 @@ public class ProjectServiceImpl implements ProjectService{
     public JSONObject getProjectDetail(String projectId) throws Exception{
         // --AND project_info.admin_area_id = user_info.user_id
         JSONObject jsonObject = new JSONObject();
-        Project projectDetail = projectMapper.getProjectDetail(projectId);
-        if(projectDetail.getProjectState().equals("21"))
-            projectDetail.setProjectState(projectStateList[5]);
-        else if(projectDetail.getProjectState().equals("11"))
-            projectDetail.setProjectState(projectStateList[6]);
-        else if(projectDetail.getProjectState().equals("12"))
-            projectDetail.setProjectState(projectStateList[7]);
-        else
-            projectDetail.setProjectState(projectStateList[Integer.parseInt(projectDetail.getProjectState())]);
+        /**
+         * Redis缓存测试
+         */
+        Project projectDetail;
+        if(redisService.getProject(projectId) != null){
+            projectDetail = redisService.getProject(projectId);
+        }else {
+            projectDetail = projectMapper.getProjectDetail(projectId);
+            if(projectDetail != null) {
+                redisService.setProject(projectDetail);
+            }
+        }
+        if(projectDetail == null) return null;
+        String deviceList = getBasketList(projectId);
+        projectDetail.setBoxList(deviceList);
+        String worker = getWorkerList(projectId);
+        projectDetail.setWorker(worker);
+        if(projectDetail.getProjectState() == null) {
+            projectDetail.setProjectState("0");
+            redisService.setProject(projectDetail);
+        }
+        switch (projectDetail.getProjectState()){
+            case "21":
+                projectDetail.setProjectState(projectStateList[5]);
+                break;
+            case "11":
+                projectDetail.setProjectState(projectStateList[6]);
+                break;
+            case "12":
+                projectDetail.setProjectState(projectStateList[7]);
+                break;
+            default:
+                projectDetail.setProjectState(projectStateList[Integer.parseInt(projectDetail.getProjectState())]);
+                break;
+        }
+//        if(projectDetail.getProjectState().equals("21"))
+//            projectDetail.setProjectState(projectStateList[5]);
+//        else if(projectDetail.getProjectState().equals("11"))
+//            projectDetail.setProjectState(projectStateList[6]);
+//        else if(projectDetail.getProjectState().equals("12"))
+//            projectDetail.setProjectState(projectStateList[7]);
+//        else
+//            projectDetail.setProjectState(projectStateList[Integer.parseInt(projectDetail.getProjectState())]);
         if(projectDetail.getProjectEnd() == null){
             projectDetail.setProjectEnd("—");
         }
@@ -316,6 +620,57 @@ public class ProjectServiceImpl implements ProjectService{
         jsonObject.put("projectDetail",projectDetail);
         jsonObject.put("electricRes",electricRes);
         return jsonObject;
+    }
+    @Override
+    public List<JSONObject> getAlarmInfo(int type, String value){
+        List<JSONObject> jsonObjects = new ArrayList<>();
+        switch (type) {
+            case 1:///按照吊篮号获取
+                List<Map<String, Object>> maps = projectMapper.getAlarmInfoByDeviceId(value);
+                for (Map<String, Object> map : maps) {
+                    jsonObjects.add(new JSONObject(map));
+                }
+                break;
+            case 2:///按照项目号获取
+                List<Map<String, Object>> map1 = projectMapper.getAlarmInfoByProjectId(value);
+                for (Map<String, Object> map : map1) {
+                    jsonObjects.add(new JSONObject(map));
+                }
+                break;
+        }
+        return jsonObjects;
+    }
+    @Override
+    public List<JSONObject> getElectricBoxStop(int type, String value){
+        List<JSONObject> jsonObjects = new ArrayList<>();
+        switch (type) {
+            case 1:///按照项目号获取
+                List<Map<String, Object>> maps = projectMapper.getElectricBoxStopByProjectId(value);
+                for (Map<String, Object> map : maps) {
+                    jsonObjects.add(new JSONObject(map));
+                }
+                break;
+        }
+        return jsonObjects;
+    }
+    @Override
+    public List<JSONObject> getPlaneGraphInfo(String projectId, String buildingNum, int type) {
+        List<JSONObject> jsonObjects = new ArrayList<>();
+        switch (type){
+            case 1:
+                List<Map<String, Object>> maps = projectMapper.getProjectPlaneGraphInfo(projectId);
+                for (Map<String, Object> map : maps) {
+                    jsonObjects.add(new JSONObject(map));
+                }
+                break;
+            case 2:
+                List<Map<String, Object>> maps1 = projectMapper.getPlaneGraphInfo(projectId, buildingNum);
+                for (Map<String, Object> map : maps1) {
+                    jsonObjects.add(new JSONObject(map));
+                }
+                break;
+        }
+        return jsonObjects;
     }
     @Override
     public boolean checkProject(String projectId){
@@ -331,7 +686,9 @@ public class ProjectServiceImpl implements ProjectService{
         try{
             if(projectMapper.editProjectDepartment(projectId,adminAreaId,adminProjectId)) {
                 userMapper.createProjectAdmin(projectId, adminProjectId);
-                projectMapper.updateState(projectId, 11);
+                projectMapper.updateState(projectId, ProjectStateEnum.getCode("清单待配置").getCode());
+                Project project = projectMapper.getProjectDetail(projectId);
+                redisService.setProject(project);
                 return true;
             }
             return false;
@@ -341,151 +698,53 @@ public class ProjectServiceImpl implements ProjectService{
     }
     @Override
     public String increaseBox(String projectId, String boxId){
-        Project project = projectMapper.getProjectDetail(projectId);
-        if(projectMapper.checkStorage(boxId)==null) {///////判断吊篮是否已经在项目中
-            String boxL;
-            String storageId = boxId;
-            String returnRe = "";
-            String returnRe1 = "";
-            boxL = projectMapper.getProjectDetail(projectId).getBoxList();
-            if (boxL == null)
-                boxL = "";
-            String projectState = projectMapper.getProjectDetail(projectId).getProjectState();////获取项目当前状态，以便修改不同情况下的新增吊篮
-            String[] test = boxId.split(",");
-            String[] beTest = boxL.split(",");
-            int k = 0;
-            for (int i = 0; i < test.length; i++) {//////测试是否存在重复数据
-                for (int j = 0; j < beTest.length; j++) {
-                    if (beTest[j].equals(test[i])) {
-                        boxId = boxId.replace(test[i], "");
-                        returnRe = returnRe + test[i] + ",";
-                        k = k + 1;
-                    }
-                }
+//        try{projectDeviceMapper.getDevice(boxId);}catch (Exception e){
+//            e.printStackTrace();
+//        }
+        if(projectDeviceMapper.getDevice(boxId).size() == 0){ // 当前吊篮不在任何项目中
+            if(electricStateMapper.getBoxLog(boxId) == null){
+                electricStateMapper.createWorkBox(boxId, projectId);
             }
-            String[] resultBoxId = boxId.split(",");//更新修改后的数据
-            for (int i = 0; i < resultBoxId.length; i++) {//////////查看是否存在此吊篮
-                if (electricStateMapper.getBoxLog(resultBoxId[i]) == null) {
-                    electricStateMapper.createWorkBox(resultBoxId[i], projectId);
-//                boxId = boxId.replace(resultBoxId[i],"");
-                    returnRe1 = returnRe1 + resultBoxId[i] + ",";
-                    k = k + 1;
-                }
-            }
-            resultBoxId = boxId.split(",");
-            boxId = "";
-            for (int i = 0; i < resultBoxId.length; i++) { //准备插入数据
-                if (!resultBoxId[i].equals(""))
-                    boxId = boxId + resultBoxId[i] + ",";
-            }
-            String boxList;
-            if (!boxId.equals("")) {/////////boxList为最终插入数据
-                boxList = boxL + boxId;
-            } else boxList = boxL;
-            String[] boxState = boxList.split(",");
-            if (k == 0) {//插入数据并返回提示
-                try {
-                    if (projectState.equals("0") || projectState.equals("1") || projectState.equals("2"))
-                        for (int i = 0; i < boxState.length; i++) {
-                            electricStateMapper.updateStateOut(boxState[i], 1);
-                            electricStateMapper.updateProject(boxState[i],projectId);
-                        }
-                    else if ((projectState.equals("3")))
-                        for (int i = 0; i < boxState.length; i++) {
-                            electricStateMapper.updateStateOut(boxState[i], 1);
-                            electricStateMapper.updateProject(boxState[i],projectId);
-                        }
-                    projectMapper.increaseBox(projectId, boxList);
+            try{
+                electricStateMapper.updateStateOut(boxId, ElectricBoxStateEnum.getCode("待安装").getCode());
+                electricStateMapper.updateProject(boxId,projectId);
+                projectMapper.increaseBox(projectId);
+                Project project = projectMapper.getProjectDetail(projectId);
+                redisService.setProject(project);
+                if(projectDeviceMapper.increaseDevice(projectId, boxId))
                     return "新增吊篮成功";
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    return "新增吊篮失败";
-                }
-            } else {
-                try {
-                    if (projectState.equals("0") || projectState.equals("1") || projectState.equals("2"))
-                        for (int i = 0; i < boxState.length; i++) {
-                            electricStateMapper.updateStateOut(boxState[i], 1);
-                            electricStateMapper.updateProject(boxState[i],projectId);
-                        }
-                    else if ((projectState.equals("3")))
-                        for (int i = 0; i < boxState.length; i++) {
-                            electricStateMapper.updateStateOut(boxState[i], 1);
-                            electricStateMapper.updateProject(boxState[i],projectId);
-                        }
-                    projectMapper.increaseBox(projectId, boxList);
-                    if (returnRe.equals(""))
-                        return "新增吊篮成功," + returnRe1 + "不存在此吊篮！已添加！";
-                    else if (returnRe1.equals(""))
-                        return "新增吊篮成功," + returnRe + "已存在项目中！";
-                    else return "新增吊篮成功," + returnRe + "已存在项目中！   " + returnRe1 + "不存在此吊篮！已添加！";
-                } catch (Exception ex) {
-                    return "新增吊篮失败";
-                }
+                else return "新增吊篮失败";
+            }catch (Exception e){
+                e.printStackTrace();
+                return "新增吊篮失败";
             }
         }else return "吊篮已存在项目中";
     }
     @Override
     public String increaseWorker(String projectId, String userId){
-        String userL;
-        String returnRe = "";
-        String returnRe1 = "";
-        userL = projectMapper.getProjectDetail(projectId).getWorker();
-        String[] test = userId.split(",");
-        String[] beTest = userL.split(",");
-        int k = 0;
-        for (int i = 0; i < test.length; i++) {//////测试是否存在重复数据
-            for (int j = 0; j < beTest.length; j++) {
-                if (beTest[j].equals(test[i])) {
-                    userId = userId.replace(test[i], "");
-                    returnRe = returnRe + test[i] + ",";
-                    k = k + 1;
+        if(projectWorkerMapper.getWorker(userId).size() == 0){
+            if(userMapper.getUserInfo(userId) != null){
+                try {
+                    projectWorkerMapper.increaseWorker(projectId, userId);
+                    projectMapper.increaseWorker(projectId);
+                    Project project = projectMapper.getProjectDetail(projectId);
+                    redisService.setProject(project);
+                    return "新增工人成功";
+                }catch (Exception e){
+                    e.printStackTrace();
+                    return "新增工人失败";
                 }
             }
+            else return "新增工人失败";
         }
-        String[] resultUserId = userId.split(",");//更新修改后的数据
-        for (int i = 0; i < resultUserId.length; i++) {//////////查看是否存在此工人
-            User user = userMapper.getUserById(resultUserId[i]);
-            if (user == null || !user.getUserRole().contains("worker")) {
-                userId = userId.replace(resultUserId[i], "");
-                returnRe1 = returnRe1 + resultUserId[i] + ",";
-                k = k + 1;
-            }
-        }
-        resultUserId = userId.split(",");
-        userId = "";
-        for (int i = 0; i < resultUserId.length; i++) { //准备插入数据
-            if (!resultUserId[i].equals(""))
-                userId = userId + resultUserId[i] + ",";
-        }
-        String userList;
-        if (!userId.equals("")) {/////////boxList为最终插入数据
-            userList = userL + userId;
-        } else userList = userL;
-        if (k == 0) {//插入数据并返回提示
-            try {
-                projectMapper.increaseWorker(projectId, userList);
-                return "新增工人成功";
-            } catch (Exception ex) {
-                return "新增工人失败";
-            }
-        } else {
-            try {
-                projectMapper.increaseWorker(projectId, userList);
-                if (returnRe.equals(""))
-                    return "新增工人成功," + "     不存在的工人为：" + returnRe1;
-                else if (returnRe1.equals(""))
-                    return "新增工人成功," + "    已存在项目中的工人为：" + returnRe;
-                else return "新增工人成功," + "已存在项目中的工人为：" + returnRe + "    不存在的工人为：" + returnRe1;
-            } catch (Exception ex) {
-                return "新增工人失败";
-            }
-        }
+        else return "新增工人失败";
     }
     @Override
     public boolean beginWork(String projectId, String userId, String boxId){
-        String userList = projectMapper.getProjectDetail(projectId).getWorker();
-        String boxList = projectMapper.getProjectDetail(projectId).getBoxList();
+        String userList = getWorkerList(projectId);
+        String boxList = getBasketList(projectId);
+        if(electricResMapper.getElectricBoxState(userId) != null) return false;//判断工人是否在工作
+        if(electricResMapper.getDevice(boxId).size() > 1) return false;//每个吊篮最多有两个人
         String[] box = boxList.split(",");
         int flag = 0;
         for(String s : box){
@@ -527,7 +786,8 @@ public class ProjectServiceImpl implements ProjectService{
     }
     @Override
     public boolean endWork(String projectId, String userId, String boxId){
-        String boxList = projectMapper.getProjectDetail(projectId).getBoxList();
+        if(electricResMapper.getElectricBoxState(userId) == null || !electricResMapper.getElectricBoxState(userId).getDeviceId().equals(boxId)) return false;
+        String boxList = getBasketList(projectId);
         Timestamp timeStart = electricResMapper.getElectricBoxState(userId) == null ? null : electricResMapper.getElectricBoxState(userId).getTimeStart();
         long hour = 0;
         if(timeStart != null) {
@@ -560,8 +820,9 @@ public class ProjectServiceImpl implements ProjectService{
                 return 2;///状态相同，不需要提交申请
             }else{
                 if(electricBoxState.getWorkingState()!=1){
-                    if(storageState == 5){////入库
+                    if(storageState == ElectricBoxStateEnum.getCode("报停审核").getCode()){////入库
                         try{
+                            projectMapper.createElectricBoxStop(projectId,deviceId);
                             electricStateMapper.updateStateIn(deviceId, storageState, image);
                             return 0;
                         }catch (Exception e){
@@ -570,6 +831,7 @@ public class ProjectServiceImpl implements ProjectService{
                         }
                     }else {
                         try {
+                            projectMapper.createElectricBoxStop(projectId,deviceId);
                             electricStateMapper.updateStateOut(deviceId,storageState);
                             return 0;
                         }catch (Exception e){
@@ -583,13 +845,21 @@ public class ProjectServiceImpl implements ProjectService{
     }
     @Override
     public int installApply(String projectId, int picNum, String managerId){
-        Project project = projectMapper.getProjectDetail(projectId);
-        String storageList = projectMapper.getProjectDetail(projectId).getBoxList();
+        Project project;
+        if(redisService.getProject(projectId) != null){
+            project = redisService.getProject(projectId);
+        }else {
+            project = projectMapper.getProjectDetail(projectId);
+            if(project != null) {
+                redisService.setProject(project);
+            }
+        }
+        String storageList = getBasketList(projectId);
         String[] storage = null;
         if(storageList != null)
             storage = storageList.split(",");
-        if(project.getAdminAreaId().equals(managerId)) {
-            if (project != null) {
+        if(project != null) {
+            if (project.getAdminAreaId().equals(managerId)) {
                 String[] storeOutTest = new String[picNum];
                 String storeOut = "";
                 for (int i = 0; i < picNum; i++) {
@@ -601,27 +871,38 @@ public class ProjectServiceImpl implements ProjectService{
                 String projectCertUrl = "";
                 try {
                     projectMapper.installApply(projectId, projectCertUrl, storeOut);
-                    projectMapper.updateState(projectId,2);
+                    projectMapper.updateState(projectId,ProjectStateEnum.getCode("吊篮安装验收").getCode());
+                    Project project1 = projectMapper.getProjectDetail(projectId);
+                    redisService.setProject(project1);
                     if(storage != null)
                         for(int i = 0 ; i < storage.length ; i++){
-                            electricStateMapper.updateStateOut(storage[i],2);
+                            if(electricStateMapper.getBoxLog(storage[i]).getStorageState() != ElectricBoxStateEnum.getCode("使用中").getCode() && electricStateMapper.getBoxLog(storage[i]).getStorageState() != 0)
+                                electricStateMapper.updateStateOut(storage[i],ElectricBoxStateEnum.getCode("待审核").getCode());
                         }
                     return 0;
                 } catch (Exception e) {
                     e.printStackTrace();
                     return 1;////插入数据库失败
                 }
-            } else return 2;///项目不存在
-        }else return 3;
+            } else return 3;
+        }else return 2;///项目不存在
     }
     @Override
     public int beginProject(String projectId, String storageList, String managerId){
-        Project project = projectMapper.getProjectDetail(projectId);
+        Project project;
+        if(redisService.getProject(projectId) != null){
+            project = redisService.getProject(projectId);
+        }else {
+            project = projectMapper.getProjectDetail(projectId);
+            if(project != null) {
+                redisService.setProject(project);
+            }
+        }
         String[] storage = null;
         if(storageList != null)
             storage = storageList.split(",");
-        if(project.getAdminAreaId().equals(managerId)) {
-            if (project != null) {
+        if(project != null) {
+            if (project.getAdminAreaId().equals(managerId)) {
                 String projectCertUrl = project.getProjectCertUrl();
                 try {
                     if(storage != null) {
@@ -629,18 +910,20 @@ public class ProjectServiceImpl implements ProjectService{
                             projectCertUrl += projectId + "_" + storage[i] + ".jpg" + ",";
                         }
                         for(int i = 0 ; i < storage.length ; i++){
-                            electricStateMapper.updateStateOut(storage[i],2);
+                            electricStateMapper.updateStateOut(storage[i],21);
                         }
                     }
                     projectMapper.beginProject(projectId, projectCertUrl);
-                    projectMapper.updateState(projectId,21);
+                    projectMapper.updateState(projectId,ProjectStateEnum.getCode("安监证书验收").getCode());
+                    Project project1 = projectMapper.getProjectDetail(projectId);
+                    redisService.setProject(project1);
                     return 0;
                 } catch (Exception e) {
                     e.printStackTrace();
                     return 1;////插入数据库失败
                 }
-            } else return 2;///项目不存在
-        }else return 3;///没有权限
+            } else return 3;///项目不存在
+        }else return 2;///没有权限
     }
     @Override
     public int prepareEnd(String projectId, String storageList){///租方管理员通知区域管理员验收项目
@@ -648,7 +931,7 @@ public class ProjectServiceImpl implements ProjectService{
         String[] storage = storageList.split(",");
         try {
             for(int i = 0 ; i < storage.length ; i++){
-                electricStateMapper.updateStateOut(storage[i],4);
+                electricStateMapper.updateStateOut(storage[i],ElectricBoxStateEnum.getCode("待报停").getCode());
             }
             return 0; /////////成功
         }catch (Exception e){
@@ -669,8 +952,10 @@ public class ProjectServiceImpl implements ProjectService{
                             projectEndUrl += projectId + "_" + (i + 1) + ".jpg" + ",";
                         }
                         projectMapper.updateProjectEnd(projectId, projectEndUrl);
+                        Project project1 = projectMapper.getProjectDetail(projectId);
+                        redisService.setProject(project1);
                         for (int i = 0 ; i < storage.length ; i++) {
-                            electricStateMapper.updateStateOut(storage[i],5);
+                            electricStateMapper.updateStateOut(storage[i],ElectricBoxStateEnum.getCode("报停审核").getCode());
                         }
                         return 0; /////////成功
                     } catch (Exception e) {
@@ -700,7 +985,7 @@ public class ProjectServiceImpl implements ProjectService{
                 return 2;///////吊篮不存在项目中
             if(electricStateMapper.getBoxLog(deviceId) == null)
                 return 3;///////吊兰已出库
-            if(electricStateMapper.getBoxLog(deviceId).getStorageState() != 5)
+            if(electricStateMapper.getBoxLog(deviceId).getStorageState() != 0)
                 return 4;///////吊篮未处于报停状态
             exceptionInfoMapper.createExceptionBox(deviceId,projectId,managerId,reason);
             return 0;
@@ -766,16 +1051,83 @@ public class ProjectServiceImpl implements ProjectService{
         }
     }
     @Override
+    public int createInstallInfo(String projectId, String userId, String deviceList){
+        String[] deviceArray = deviceList.split(",");
+        if(deviceArray.length == 0) return 0;
+        User user;
+        if(redisService.getUser(userId) != null){
+            user = redisService.getUser(userId);
+        }else {
+            user = userMapper.getUserInfo(userId);
+            if(user != null){
+                redisService.setUser(user);
+            }
+        }
+        if(user == null) return 0;
+        if(!user.getUserPerm().equals("installer")) return 0;
+        for(String deviceId : deviceArray){
+            if(projectMapper.insertInstallInfo(userId, projectId, deviceId)) {
+                electricStateMapper.updateStateOut(deviceId, ElectricBoxStateEnum.getCode("正在安装").getCode());
+            }
+        }
+        return 1;
+    }
+    @Override
     public int deleteProject(String projectId){
         try {
             String[] deleteProject = new String[1];
             deleteProject[0] = projectId;
             projectMapper.deleteProject(deleteProject);
+            projectWorkerMapper.deleteWorkerByProjectId(projectId);
+            redisService.delProject(projectId);
             return 1;
         }catch (Exception e){
             e.printStackTrace();
             return 0;
         }
+    }
+    @Override
+    public int uploadPlaneGraph(InputStream file, String projectId, int num, int type) {
+        if(projectId.equals("") || file == null){
+            return 0;
+        }
+        String fileName = "";
+        if(type == 1) {
+            fileName = "plane_graph" + "_" + "all" + ".jpg";
+        }else {
+            fileName = "plane_graph" + "_" + num + ".jpg";
+        }
+        FTPClient ftp = new FTPClient();
+        ftp.setControlEncoding("GBK");
+        try {
+            int reply;
+            ftp.connect(FTPFileURL,21);
+            ftp.login(FTPUserName,FTPUserPassword);
+            reply = ftp.getReplyCode();
+            if(!FTPReply.isPositiveCompletion(reply)){
+                ftp.disconnect();
+                return 0;
+            }
+            ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
+            ftp.makeDirectory(FTPPlaneGraph + projectId + "/");
+            ftp.changeWorkingDirectory(FTPPlaneGraph + projectId + "/");
+            ftp.storeFile(fileName,file);
+            file.close();
+            ftp.logout();
+            return 1;
+        }catch (IOException ex){
+            return 0;
+        }finally {
+            if(ftp.isConnected()){
+                try{
+                    ftp.disconnect();
+                }catch (IOException ioe){}
+            }
+        }
+    }
+    @Override
+    public int getRepairBoxNum(String projectId){
+        return repairInfoMapper.getRepairBoxNum(projectId);
     }
     @Override
     public List<RepairBoxInfo> getRepairBox(String projectId){
@@ -797,7 +1149,20 @@ public class ProjectServiceImpl implements ProjectService{
     @Override
     public JSONObject getStoreInInfo(String projectId, String deviceId, String managerId){
         JSONObject jsonObject = new JSONObject();
-        String projectName = projectMapper.getProjectDetail(projectId).getProjectName();
+        Project project;
+        if(projectId.equals("") || projectId == null){
+            project = null;
+        }else {
+            if(redisService.getProject(projectId) != null){
+                project = redisService.getProject(projectId);
+            }else {
+                project = projectMapper.getProjectDetail(projectId);
+                if(project != null){
+                    redisService.setProject(project);
+                }
+            }
+        }
+        String projectName = project == null ? "" : project.getProjectName();
         projectName = projectName == null ? "" : projectName;
         String userName = userMapper.getUserById(managerId).getUserName();
         userName = userName == null ? "" : userName;
@@ -820,14 +1185,32 @@ public class ProjectServiceImpl implements ProjectService{
     @Override
     public JSONObject getBeginWorkInfo(String projectId, int picNum, String managerId){
         JSONObject jsonObject = new JSONObject();
-        Project project = projectMapper.getProjectDetail(projectId);
-        String projectName = project.getProjectName();
+        Project project;
+        if(projectId.equals("") || projectId == null){
+            project = null;
+        }else {
+            if(redisService.getProject(projectId) != null){
+                project = redisService.getProject(projectId);
+            }else {
+                project = projectMapper.getProjectDetail(projectId);
+                if(project != null){
+                    redisService.setProject(project);
+                }
+            }
+        }
+        String projectName =project == null ? "" : project.getProjectName();
         String userName = userMapper.getUserById(managerId).getUserName();
-        String device = project.getBoxList() == null?"":project.getBoxList();
+        String device = getBasketList(projectId);
         String[] deviceList = device.split(",");
-        String image = project.getStoreOut() == null?"":project.getStoreOut();
+        for(int i = 0 ; i < deviceList.length ; i++){
+            if(electricStateMapper.getBoxLog(deviceList[i]).getStorageState() != ElectricBoxStateEnum.getCode("待审核").getCode()){
+                device = device.replace(deviceList[i] + ",", "");
+            }
+        }
+        String[] devicePush = device.split(",");
+        String image =project == null ? "" : project.getStoreOut() == null?"":project.getStoreOut();
         String[] imageList = image.split(",");
-        String certificate = project.getProjectCertUrl();
+        String certificate =project == null ? "" : project.getProjectCertUrl();
         String[] certificateList = certificate.split(",");
         String res;
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -837,7 +1220,7 @@ public class ProjectServiceImpl implements ProjectService{
         jsonObject.put("adminAreaName",managerId);
         jsonObject.put("adminAreaId",userName);
         jsonObject.put("type", 1);
-        jsonObject.put("deviceList",deviceList);
+        jsonObject.put("deviceList",devicePush);
         jsonObject.put("imageList", imageList);
         jsonObject.put("certificate",certificateList);
         jsonObject.put("uploadTime",res);
@@ -846,11 +1229,28 @@ public class ProjectServiceImpl implements ProjectService{
     @Override
     public JSONObject getStoreCertInfo(String projectId, int picNum, String managerId){
         JSONObject jsonObject = new JSONObject();
-        Project project = projectMapper.getProjectDetail(projectId);
-        String projectName = project.getProjectName();
+        Project project;
+        if(projectId.equals("") || projectId == null){
+            project = null;
+        }else {
+            if(redisService.getProject(projectId) != null){
+                project = redisService.getProject(projectId);
+            }else {
+                project = projectMapper.getProjectDetail(projectId);
+                if(project != null){
+                    redisService.setProject(project);
+                }
+            }
+        }
+        String projectName =project == null ? "" : project.getProjectName();
         String userName = userMapper.getUserById(managerId).getUserName();
-        String device = project.getBoxList() == null?"":project.getBoxList();
+        String device = getBasketList(projectId) == null?"":project.getBoxList();
         String[] deviceList = device.split(",");
+        for(String deviceId : deviceList){
+            if(electricStateMapper.getBoxLog(deviceId).getStorageState() != 21)
+                device = device.replace(deviceId + ",","");
+        }
+        String[] deviceList1 = device.split(",");
         String image = project.getStoreOut() == null?"":project.getStoreOut();
         String[] imageList = image.split(",");
         String certificate = project.getProjectCertUrl();
@@ -863,7 +1263,7 @@ public class ProjectServiceImpl implements ProjectService{
         jsonObject.put("adminAreaName",managerId);
         jsonObject.put("adminAreaId",userName);
         jsonObject.put("type", 1);
-        jsonObject.put("deviceList",deviceList);
+        jsonObject.put("deviceList",deviceList1);
         jsonObject.put("imageList", imageList);
         jsonObject.put("certificate",certificateList);
         jsonObject.put("uploadTime",res);
@@ -876,7 +1276,19 @@ public class ProjectServiceImpl implements ProjectService{
         JSONObject jsonObject2 = new JSONObject();/////管理员信息
         JSONObject jsonObject3 = new JSONObject();/////所有的吊篮ID
         JSONObject jsonObject4 = new JSONObject();/////所有的吊篮照片url
-        Project project = projectMapper.getProjectDetail(projectId);
+        Project project;
+        if(projectId.equals("") || projectId == null){
+            project = null;
+        }else {
+            if(redisService.getProject(projectId) != null){
+                project = redisService.getProject(projectId);
+            }else {
+                project = projectMapper.getProjectDetail(projectId);
+                if(project != null){
+                    redisService.setProject(project);
+                }
+            }
+        }
         String projectName = project.getProjectName();
         String userName = userMapper.getUserById(managerId).getUserName();
         String deviceList = project.getBoxList()==null?"":project.getBoxList();
@@ -925,7 +1337,11 @@ public class ProjectServiceImpl implements ProjectService{
         switch (userFlag) {
             case 1:
                 preStopMapper.deleteOutDate(timestampNow);
-                jsonObject.put("usedSum", preStopMapper.all());///吊篮总数
+                try {
+                    jsonObject.put("usedSum", preStopMapper.all());///吊篮总数
+                }catch (Exception e){
+                    jsonObject.put("usedSum", 0);
+                }
                 break;
             case 7:
                 jsonObject.put("totalPreStop", preStopMapper.sum(timestamp, timestampNow));
@@ -947,16 +1363,45 @@ public class ProjectServiceImpl implements ProjectService{
                 List<JSONObject> jsonObjects3 = getPreStopInfo(timestamp3,timestampNow);
                 jsonObject.put("preStopBasket",jsonObjects3);
                 break;
+
         }
         return jsonObject;
     }///获取不同状态的吊篮数目
+    @Override
+    public JSONObject getStorageInfo(String deviceId){
+        JSONObject jsonObject = new JSONObject();
+        ElectricBoxState electricBoxState = electricStateMapper.getBoxLog(deviceId);
+        String projectId = projectDeviceMapper.getDevice(deviceId).get(0);
+        Project project;
+        if(projectId != null && !projectId.equals("")) {
+            try {
+                project = (Project) getProjectDetail(projectId).get("projectDetail");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }else project = null;
+        return jsonObject;
+    }
     private List<JSONObject> getPreStopInfo(Timestamp timestamp, Timestamp timestamp2){
         List<JSONObject> jsonObjectList = new ArrayList<>();
         List<PreStop> preStops = preStopMapper.getPreStopInfo(timestamp, timestamp2);
         if(preStops != null) {
             for (PreStop preStop : preStops) {
+                Project project;
+                if(preStop.getProjectId().equals("") || preStop.getProjectId() == null){
+                    project = null;
+                }else {
+                    if(redisService.getProject(preStop.getProjectId()) != null){
+                        project = redisService.getProject(preStop.getProjectId());
+                    }else {
+                        project = projectMapper.getProjectDetail(preStop.getProjectId());
+                        if(project != null){
+                            redisService.setProject(project);
+                        }
+                    }
+                }
                 JSONObject jsonObject = new JSONObject();
-                jsonObject.put("projectName",projectMapper.getProjectDetail(preStop.getProjectId()).getProjectName());
+                jsonObject.put("projectName",project.getProjectName());
                 jsonObject.put("preStopBasketNum",preStop.getNum());
                 jsonObjectList.add(jsonObject);
             }
@@ -964,21 +1409,49 @@ public class ProjectServiceImpl implements ProjectService{
         return jsonObjectList;
     }
     @Override
+    public JSONObject getWorker(int type, String deviceId){
+        JSONObject jsonObject = new JSONObject();
+        List<ElectricRes> electricResList = electricResMapper.getDevice(deviceId);
+        int i = 1;
+        for(ElectricRes electricRes : electricResList){
+            User user;
+            if(redisService.getUser(electricRes.getProjectBuilders()) != null){
+                user = redisService.getUser(electricRes.getProjectBuilders());
+            }else {
+                user = userMapper.getUserInfo(electricRes.getProjectBuilders());
+                if(user != null){
+                    redisService.setUser(user);
+                }
+            }
+            jsonObject.put("worker" + i , user);
+            i++;
+        }
+        return jsonObject;
+    }
+    @Override
     public int storageIn(String projectId, String deviceId){
         ElectricBoxState electricBoxState = electricStateMapper.getBoxLog(deviceId);
+        List<String> isInProject = projectDeviceMapper.getDevice(deviceId);
+        if(isInProject == null) return 2;
+        if(isInProject.size() == 0) return 2;
         if(electricBoxState != null) {
-            if(electricBoxState.getStorageState() == 5 || electricBoxState.getStorageState() == 1 || electricBoxState.getStorageState() == 0) {
+            if(electricBoxState.getStorageState() == ElectricBoxStateEnum.getCode("报停审核").getCode() ||
+                    electricBoxState.getStorageState() == ElectricBoxStateEnum.getCode("待安装").getCode() ||
+                    electricBoxState.getStorageState() == 0) {
                 try {
+//                    Project project = projectMapper.getProjectDetail(projectId);
+//                    electricBoxMapper.deleteRealTimeDateById(deviceId);
+//                    setUpDataMapper.deleteSetUpData(deviceId);
+//                    electricStateMapper.deleteWorkBox(deviceId);
+                    projectDeviceMapper.deleteDeviceByDeviceId(deviceId);
+//                    String storageList = project == null ? "" : getBasketList(projectId);
+//                    String storageNew = "";
+//                    if (!storageList.equals("")) {
+//                        storageNew = storageList.replace(deviceId + ",", "");
+//                    }
+                    projectMapper.decreaseBox(projectId);
                     Project project = projectMapper.getProjectDetail(projectId);
-                    electricBoxMapper.deleteRealTimeDateById(deviceId);
-                    setUpDataMapper.deleteSetUpData(deviceId);
-                    electricStateMapper.deleteWorkBox(deviceId);
-                    String storageList = project == null ? "" : project.getBoxList();
-                    String storageNew = "";
-                    if (!storageList.equals("")) {
-                        storageNew = storageList.replace(deviceId + ",", "");
-                    }
-                    projectMapper.increaseBox(projectId, storageNew);
+                    redisService.setProject(project);
                     return 0;
                 }catch (Exception e){
                     System.out.println(e.getMessage());
@@ -986,5 +1459,31 @@ public class ProjectServiceImpl implements ProjectService{
                 }
             }else return 1;////吊篮未报停
         }else return 2;////吊篮不存在
+    }
+    @Override
+    public int uploadPlaneGraphInfo(JSONObject info, String projectId, String buildingNum, int type) {
+        switch (type){
+            case 1:
+                for(String buildingId :  info.keySet()){
+                    if(projectMapper.getProjectPlaneGraphOne(projectId, buildingNum, (String) info.get(buildingId)) != null) continue;
+                    if(!projectMapper.uploadProjectPlaneGraphInfo(projectId, buildingId, (String) info.get(buildingId))) return 0;
+                }
+                return 1;
+            case 2:
+                for(String deviceId : info.keySet()){
+                    String buildInfo = (String) info.get(deviceId);
+                    String[] locationInfo = buildInfo.split(":");
+                    String locationId = locationInfo[0];
+                    String location = locationInfo[1];
+                    if(locationId.equals("A") || locationId.equals("B")) {
+                        if(projectMapper.getPlaneGraphAB(projectId, locationId, buildingNum, locationId) != null) continue;
+                        if(!projectMapper.uploadPlaneGraphInfo(projectId, buildingNum, deviceId, locationId, location)) return 0;
+                    }else {
+                        if(!projectMapper.updatePlaneGraphInfo(projectId, buildingNum, deviceId, locationId, location)) return 0;
+                    }
+                }
+                return 1;
+        }
+        return 0;
     }
 }

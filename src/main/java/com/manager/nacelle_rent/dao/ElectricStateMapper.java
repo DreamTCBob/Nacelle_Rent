@@ -9,6 +9,7 @@ import java.util.List;
 @Mapper
 public interface ElectricStateMapper {
     List<ElectricBoxState> getStoreList(int flag);
+    List<ElectricBoxState> getAllDevice();
     void updateStateIn(@Param("deviceId") String deviceId, @Param("storageState") int storageState, @Param("storeIn") String storeIn);
     void updateStateOut(@Param("deviceId") String deviceId, @Param("storageState") int storageState);
     void updateProject(@Param("deviceId") String deviceId, @Param("projectId") String projectId);
@@ -16,5 +17,6 @@ public interface ElectricStateMapper {
     void createWorkBox(@Param("deviceId") String deviceId, @Param("projectId") String projectId);
     void deleteWorkBox(@Param("deviceId") String deviceId);
     int sum(@Param("storageState") int storageState);///获取不同状态的吊篮总数
-    ElectricBoxState getBoxLog(String deviceId);
+    int sumOfElectricBox();
+    ElectricBoxState getBoxLog(@Param("deviceId") String deviceId);
 }
