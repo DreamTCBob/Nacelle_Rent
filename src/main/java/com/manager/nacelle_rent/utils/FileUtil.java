@@ -8,8 +8,8 @@ import java.io.*;
  * 文件上传工具包
  */
 public class FileUtil {
-    private static String localFilePath = "d:/";
-//    private static String localFilePath = "/var/ftp/nacelleRent/contract/";
+//    private static String localFilePath = "d:/";
+    private static String localFilePath = "/var/ftp/nacelleRent/contract/";
     /**
      *
      * @param file 文件

@@ -42,6 +42,7 @@ public interface ProjectService {
     int applyEnd(String projectId, int picNum, String managerId);
     int createCompany(Map<String,String> map);
     int createExceptionBox(String deviceId, String projectId, String managerId, String reason);
+    int createProjectSupInfo(ProjectSupInfo projectSupInfo);
     int createRepairBox(Map<String,String> repair);
     int createRepairEndBox(Map<String,String> repair);
     int createInstallInfo(String projectId, String userId, String deviceList);

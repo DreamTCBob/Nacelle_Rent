@@ -91,13 +91,13 @@ public class ElectricBoxController {
 
     @ApiOperation(value = "获取安装信息" ,  notes="")
     @GetMapping("/getElectricBoxConfig")
-    public JSONObject getElectricBoxConfig(HttpServletRequest request, @RequestParam String deviceId){
+    public JSONObject getElectricBoxConfig(HttpServletRequest request, @RequestParam String deviceId , @RequestParam int type){
         JSONObject jsonObject=new JSONObject();
         String password = request.getHeader("Authorization");
         int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
             jsonObject.put("isLogin",true);
-            JSONObject result = electricBoxService.getElectricBoxConfig(deviceId);
+            JSONObject result = electricBoxService.getElectricBoxConfig(deviceId, type);
             jsonObject.put("electricBoxConfig",result);
         }else{
             jsonObject.put("isLogin",false);
@@ -117,7 +117,7 @@ public class ElectricBoxController {
             if(result == 1)
                 jsonObject.put("delete","success");
             else
-                jsonObject.put("delete","fail");
+                jsonObject.put("delete/**/","fail");
         }else{
             jsonObject.put("isLogin",false);
         }

@@ -12,5 +12,6 @@ public class mapUtils {
         put("salesWebAdmin","营销部管理员");
         put("engineeringWebAdmin","工程部管理员");
         put("accountingWebAdmin","财务部管理员");
+        put("InstallTeam","安装队伍");
     }};
 }

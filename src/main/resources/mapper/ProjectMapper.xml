@@ -3,6 +3,7 @@
         PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.manager.nacelle_rent.dao.ProjectMapper">
+
     <resultMap id="projectResultMap" type="com.manager.nacelle_rent.entity.Project">
         <result property="projectId" column="project_id" />
         <result property="projectName" column="project_name" />
@@ -37,6 +38,31 @@
         <result property="endTime" column="end_time" />
         <result property="flag" column="flag" />
     </resultMap>
+    <resultMap id="projectSupInfoMap" type="com.manager.nacelle_rent.entity.ProjectSupInfo">
+        <result property="projectId" column="project_id" />
+        <result property="projectName" column="project_name" />
+        <result property="constructionUnit" column="construction_unit" />
+        <result property="supervisionUnit" column="supervision_unit" />
+        <result property="nacelleInspectionUnit" column="nacelle_inspection_unit" />
+        <result property="curtainWallConsultantUnit" column="curtain_wall_consultant_unit"/>
+        <result property="maxMeters" column="max_meters"/>
+        <result property="maxLayers" column="max_layers"/>
+        <result property="area" column="area"/>
+        <result property="buildingNumbers" column="building_numbers"/>
+    </resultMap>
+    <parameterMap id="projectSupInfoMapIn" type="com.manager.nacelle_rent.entity.ProjectSupInfo">
+        <parameter property="projectId" resultMap="projectSupInfoMap"/>
+        <parameter property="projectName" resultMap="projectSupInfoMap"/>
+        <parameter property="constructionUnit" resultMap="projectSupInfoMap"/>
+        <parameter property="supervisionUnit" resultMap="projectSupInfoMap"/>
+        <parameter property="nacelleInspectionUnit" resultMap="projectSupInfoMap"/>
+        <parameter property="curtainWallConsultantUnit" resultMap="projectSupInfoMap"/>
+        <parameter property="maxMeters" resultMap="projectSupInfoMap"/>
+        <parameter property="maxLayers" resultMap="projectSupInfoMap"/>
+        <parameter property="area" resultMap="projectSupInfoMap"/>
+        <parameter property="buildingNumbers" resultMap="projectSupInfoMap"/>
+    </parameterMap>
+
     <select id="getProjectList" resultMap="projectResultMap" parameterType="int">
         SELECT project_id, project_name, project_state, project_start, project_end, admin_area_id, project_builders, device_num, store_out, project_cert_url
         FROM   project_info
@@ -296,5 +322,22 @@
         INSERT INTO project_plane_graph(project_id, building_id, location, time)
         VALUES (#{projectId}, #{buildingId}, #{location}, current_timestamp)
     </insert>
+
+    <!--此处为项目补充信息的增删查改-->
+
+    <update id="createProjectSupInfo" parameterMap="projectSupInfoMapIn">
+        INSERT INTO project_sup_info(project_id, project_name, construction_unit, supervision_unit, nacelle_inspection_unit, curtain_wall_consultant_unit, max_meters, max_layers, area, building_numbers)
+        VALUES (#{projectId}, #{projectName}, #{constructionUnit}, #{supervisionUnit}, #{nacelleInspectionUnit}, #{curtainWallConsultantUnit}, #{maxMeters}, #{maxLayers}, #{area}, #{buildingNumbers})
+        ON DUPLICATE KEY UPDATE
+        project_id=VALUES(project_id),project_name=VALUES(project_name), construction_unit=VALUES(construction_unit),
+        supervision_unit=VALUES(supervision_unit), nacelle_inspection_unit=VALUES(nacelle_inspection_unit),curtain_wall_consultant_unit=VALUES(curtain_wall_consultant_unit),
+        max_meters=VALUES(max_meters), max_layers=VALUES(max_layers), area=VALUES(area), building_numbers=VALUES(building_numbers)
+    </update>
+
+    <select id="getProjectSupInfo" parameterType="String" resultMap="projectSupInfoMap">
+        SELECT *
+        FROM project_sup_info
+        WHERE project_id = #{projectId}
+    </select>
 
 </mapper>

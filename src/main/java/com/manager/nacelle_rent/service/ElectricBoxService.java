@@ -10,6 +10,6 @@ public interface ElectricBoxService {
     List<ElectricRes> serializeElectricRes(List<ElectricRes> list);
     int createElectricBoxConfig(String deviceId, String type, String number);
     int deleteElectricBoxConfig(String deviceId, String type);
-    JSONObject getElectricBoxConfig(String deviceId);
+    JSONObject getElectricBoxConfig(String deviceId, int type);
 
 }

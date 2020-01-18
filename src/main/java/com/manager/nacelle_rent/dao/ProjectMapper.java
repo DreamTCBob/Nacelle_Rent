@@ -1,6 +1,7 @@
 package com.manager.nacelle_rent.dao;
 
 import com.manager.nacelle_rent.entity.Project;
+import com.manager.nacelle_rent.entity.ProjectSupInfo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -51,11 +52,12 @@ public interface ProjectMapper {
     void beginProject(@Param("projectId") String projectId, @Param("projectCertUrl") String projectCertUrl);
     void updateState(@Param("projectId") String projectId, @Param("projectState") int projectState);
     void updateKeyWord(@Param("projectId") String projectId, @Param("owner") String owner, @Param("region") String region,
-                       @Param("coordinate") String coordinate, @Param("servicePeriod") int servicePeriod);
+                       @Param("coordinate") String coordinate, @Param("servicePeriod") String servicePeriod);
     void updateProjectEnd(@Param("projectId") String projectId, @Param("projectEndUrl") String projectEndUrl);
     void createCompany(@Param("companyName") String companyName, @Param("projectId") String projectId);
     void createConfigurationList(@Param("projectId") String projectId, @Param("sixMetersNum") int sixMetersNum);
     void createElectricBoxStopInfo(@Param("projectId") String projectId, @Param("managerId") String managerId, @Param("number") int number);
     void createElectricBoxStop(@Param("projectId") String projectId, @Param("deviceId") String deviceId);
     void deleteProject(String[] multipleProjectId);
+    void createProjectSupInfo(ProjectSupInfo projectSupInfo);
 }

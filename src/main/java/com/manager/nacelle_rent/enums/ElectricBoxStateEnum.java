@@ -4,6 +4,7 @@ public enum ElectricBoxStateEnum {
 
     INSTALLING(1, "待安装"),
     INSTALL(11,"正在安装"),
+    INSTALL_APPLY(12,"安装审核中"),
     ACCEPTANCE(2, "待审核"),
     ONGOING(3, "使用中"),
     STAND_BY(4, "待报停"),

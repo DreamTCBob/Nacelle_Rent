@@ -20,7 +20,7 @@ public class Project {
     private String owner;
     private String region;
     private String coordinate;
-    private int servicePeriod;
+    private String servicePeriod;
     private int deviceNum;
     private int workerNum;
     private User adminAreaUser;
@@ -206,11 +206,11 @@ public class Project {
         this.workerNum = workerNum;
     }
 
-    public int getServicePeriod() {
+    public String getServicePeriod() {
         return servicePeriod;
     }
 
-    public void setServicePeriod(int servicePeriod) {
+    public void setServicePeriod(String servicePeriod) {
         this.servicePeriod = servicePeriod;
     }
 }

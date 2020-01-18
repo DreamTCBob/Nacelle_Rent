@@ -15,7 +15,7 @@ public interface UserService {
     int getRegisterState(String userPhone);
     int judgeProAdmin(String userId);
     int deleteUser(String userId);
-    int updateQualifications(String userId, int picNum);
+    int updateQualifications(String userId, String type, int picNum);
     String createWebAdmin(Map<String, String> map);
     String createManageAdmin(Map<String, String> map);
     String getQualifications(String userId);

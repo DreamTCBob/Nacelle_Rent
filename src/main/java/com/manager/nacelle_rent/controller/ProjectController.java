@@ -181,7 +181,8 @@ public class ProjectController {
         if(flag == 1){
             try {
                 Project projectDetail = (Project) projectService.getProjectDetail(projectId).get("projectDetail");
-                String resultString = FileUtil.readFile(localFilePath + projectId + ".txt");
+                String resultString = FileUtil.readFile("/var/ftp/nacelleRent/contract/" + projectId + ".txt");
+//                String resultString = FileUtil.readFile("d:/" + projectId + ".txt");
                 String userId = projectDetail.getAdminAreaId();
                 String userName = userMapper.getNameById(userId) == null ? "" :  userMapper.getNameById(userId).getUserName();
                 User adminAreaUser = new User();
@@ -1451,7 +1452,8 @@ public class ProjectController {
 
     @ApiOperation(value = "新建安装信息" ,  notes="")
     @PostMapping("/createInstallInfo")
-    public JSONObject createInstallInfo(HttpServletRequest request, @RequestParam String projectId, @RequestParam String userId, @RequestParam String deviceList){
+    public JSONObject createInstallInfo(HttpServletRequest request, @RequestParam String projectId, @RequestParam String userId,
+                                        @RequestParam String deviceList){
         JSONObject jsonObject=new JSONObject();
         String password = request.getHeader("Authorization");
         int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
@@ -1561,4 +1563,28 @@ public class ProjectController {
         return jsonObject;
     }
 
+    @ApiOperation(value = "新增项目补充信息" ,  notes="")
+    @PostMapping("/createProjectSupInfo")
+    public JSONObject createProjectSupInfo(HttpServletRequest request, @RequestBody ProjectSupInfo projectSupInfo){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            if(projectSupInfo != null && !projectSupInfo.getProjectId().equals("")) {
+                int result = projectService.createProjectSupInfo(projectSupInfo);
+                switch (result) {
+                    case 0:
+                        jsonObject.put("create", "success");
+                        break;
+                    case 1:
+                        jsonObject.put("create", "failed");
+                        break;
+                }
+            }else jsonObject.put("create","empty");
+            jsonObject.put("isAllowed",true);
+        } else{
+            jsonObject.put("isAllowed",false);
+        }
+        return jsonObject;
+    }
 }

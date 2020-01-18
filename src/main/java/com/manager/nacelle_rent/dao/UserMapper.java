@@ -82,4 +82,8 @@ public interface UserMapper {
     Map<String, Object> getDeviceInstallInfo(@Param("projectId") String projectId, @Param("userId") String userId, @Param("deviceId") String deviceId);
     List<String> getProjectByInstaller(@Param("userId") String userId);
 
+    String getCameraIdPart(@Param("deviceId") String deviceId);
+    String getHoistIdPart(@Param("deviceId") String deviceId);
+    String getSafeLockIdPart(@Param("deviceId") String deviceId);
+
 }

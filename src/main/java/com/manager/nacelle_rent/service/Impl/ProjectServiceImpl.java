@@ -194,7 +194,7 @@ public class ProjectServiceImpl implements ProjectService{
                     for(String deviceId : deviceList){
                         if(deviceId.equals("A") || deviceId.equals("B")) continue;
                         int deviceState = electricStateMapper.getBoxLog(deviceId).getStorageState();
-                        if(deviceState == ElectricBoxStateEnum.getCode("待安装").getCode() || deviceState == ElectricBoxStateEnum.getCode("正在安装").getCode())
+                        if(deviceState == ElectricBoxStateEnum.getCode("待安装").getCode() || deviceState == ElectricBoxStateEnum.getCode("正在安装").getCode() || deviceState == ElectricBoxStateEnum.getCode("安装审核中").getCode())
                             projects.add(project);
                     }
                 }
@@ -438,7 +438,7 @@ public class ProjectServiceImpl implements ProjectService{
             for(String deviceId : deviceList){
                 if(deviceId.equals("A") || deviceId.equals("B")) continue;
                 int deviceState = electricStateMapper.getBoxLog(deviceId).getStorageState();
-                if(deviceState == ElectricBoxStateEnum.getCode("待安装").getCode() || deviceState == ElectricBoxStateEnum.getCode("正在安装").getCode())
+                if(deviceState == ElectricBoxStateEnum.getCode("待安装").getCode() || deviceState == ElectricBoxStateEnum.getCode("正在安装").getCode() || deviceState == ElectricBoxStateEnum.getCode("安装审核中").getCode())
                     installingProject.add(project);
                 if(deviceState == ElectricBoxStateEnum.getCode("待审核").getCode()
                         || deviceState == ElectricBoxStateEnum.getCode("使用中").getCode()
@@ -447,6 +447,7 @@ public class ProjectServiceImpl implements ProjectService{
                     operatingProject.add(project);
             }
 //            List<String> endDeviceList = projectDeviceMapper.getEndDeviceList(project.getProjectId());
+            if(project.getProjectState().charAt(0) == '1' || project.getProjectState().charAt(0) == '2') installingProject.add(project);
             if(Integer.parseInt(project.getProjectState()) == ProjectStateEnum.getCode("已结束").getCode()) endProject.add(project);
         }
         jsonObject.put("installingProjectList",new ArrayList<>(new HashSet<>(installingProject)));
@@ -995,6 +996,16 @@ public class ProjectServiceImpl implements ProjectService{
         }
     }
     @Override
+    public int createProjectSupInfo(ProjectSupInfo projectSupInfo){
+        try {
+            projectMapper.createProjectSupInfo(projectSupInfo);
+            return 0;
+        }catch (Exception e){
+            e.printStackTrace();
+            return 1;
+        }
+    }
+    @Override
     public int createRepairBox(Map<String, String> repair){
         String imageStart = "";
         String deviceId = repair.get("deviceId");
@@ -1064,7 +1075,7 @@ public class ProjectServiceImpl implements ProjectService{
             }
         }
         if(user == null) return 0;
-        if(!user.getUserPerm().equals("installer")) return 0;
+        if(!user.getUserRole().equals("InstallTeam")) return 0;
         for(String deviceId : deviceArray){
             if(projectMapper.insertInstallInfo(userId, projectId, deviceId)) {
                 electricStateMapper.updateStateOut(deviceId, ElectricBoxStateEnum.getCode("正在安装").getCode());

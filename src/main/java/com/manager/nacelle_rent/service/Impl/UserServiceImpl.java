@@ -5,6 +5,8 @@ import com.manager.nacelle_rent.dao.ElectricBoxMapper;
 import com.manager.nacelle_rent.dao.ElectricStateMapper;
 import com.manager.nacelle_rent.dao.ProjectMapper;
 import com.manager.nacelle_rent.dao.UserMapper;
+import com.manager.nacelle_rent.entity.ElectricBoxState;
+import com.manager.nacelle_rent.entity.ElectricRes;
 import com.manager.nacelle_rent.enums.ElectricBoxStateEnum;
 import com.manager.nacelle_rent.enums.ProjectStateEnum;
 import com.manager.nacelle_rent.service.ProjectService;
@@ -208,13 +210,14 @@ public class UserServiceImpl implements UserService {
         }
     }
     @Override
-    public int updateQualifications(String userId, int picNum){
-        String qualificationImage = userMapper.getUserInfo(userId) == null ? "" : userMapper.getUserInfo(userId).getUserPerm();
+    public int updateQualifications(String userId, String type, int picNum){
+        String qualificationImage = userMapper.getUserInfo(userId) == null ? null : userMapper.getUserInfo(userId).getUserPerm();
         qualificationImage = qualificationImage == null ? "" : qualificationImage;
         if(qualificationImage.equals("")) {
-            for (int i = 0; i < picNum; i++) {
-                qualificationImage += userId + "_" + (i + 1) + ".jpg" + ",";
-            }
+//            for (int i = 0; i < picNum; i++) {
+//                qualificationImage += userId + "_" + (i + 1) + ".jpg" + ",";
+//            }
+            qualificationImage = type + "_" + picNum;
             try {
                 userMapper.updateQualifications(qualificationImage, userId);
                 User user = userMapper.getUserInfo(userId);
@@ -223,18 +226,25 @@ public class UserServiceImpl implements UserService {
             } catch (Exception e) {
                 return 1;
             }
-        }else {////增加图片
+        }else {////增加或者修改
+            List<String> list = new ArrayList<>();
             String[] imageBefore = qualificationImage.split(",");
-            String imageLast = imageBefore[imageBefore.length-1];
-            int j = imageLast.indexOf("_");
-            int k = imageLast.indexOf(".");
-            String num = imageLast.substring(j+1,k);
-            int numNow = Integer.parseInt(num);
-            for (int i = 0; i < picNum; i++) {
-                qualificationImage += userId + "_" + (numNow + i + 1) + ".jpg" + ",";
+            for(String stringTypeAndNum : imageBefore){
+                String[] typeAndNumStrings = stringTypeAndNum.split("_");
+                if(!type.equals(typeAndNumStrings[0])) list.add(stringTypeAndNum);
             }
+            list.add(type + "_" + picNum);
+            String newQualifications = String.join(",", list);
+//            String imageLast = imageBefore[imageBefore.length-1];
+//            int j = imageLast.indexOf("_");
+//            int k = imageLast.indexOf(".");
+//            String num = imageLast.substring(j+1,k);
+//            int numNow = Integer.parseInt(num);
+//            for (int i = 0; i < picNum; i++) {
+//                qualificationImage += userId + "_" + (numNow + i + 1) + ".jpg" + ",";
+//            }
             try {
-                userMapper.updateQualifications(qualificationImage, userId);
+                userMapper.updateQualifications(newQualifications, userId);
                 User user = userMapper.getUserInfo(userId);
                 redisService.setUser(user);
                 return 0;
@@ -633,7 +643,10 @@ public class UserServiceImpl implements UserService {
             case 1:
                 if(userMapper.getDeviceInstallInfo(projectId, userId, deviceId).get("pic_flag").equals("0") || userMapper.getInstaller(projectId,userId,deviceId) == null ||
                 userMapper.getAllParts(deviceId) == null || userMapper.getAllParts(deviceId).size() != 4) return 0;
-                if(userMapper.updateAllInstallState(projectId, userId, deviceId, state)) return 1;
+                if(userMapper.updateAllInstallState(projectId, userId, deviceId, state)) {
+                    electricStateMapper.updateStateOut(deviceId,12);
+                    return 1;
+                }
                 else return 0;
             case 2:
                 if(userMapper.updatePicInstallState(projectId, userId, deviceId, state)) return 1;
@@ -654,6 +667,9 @@ public class UserServiceImpl implements UserService {
             jsonObject1.put(map.get("device_id") + "_userState", user);
             if(device == null) jsonObject1.put(map.get("device_id") + "_deviceState", 0);
             else jsonObject1.put(map.get("device_id") + "_deviceState", device.size() == 4 ? 1 : 0);
+            ElectricBoxState electricBoxState = electricStateMapper.getBoxLog((String) map.get("device_id"));
+            if(electricBoxState != null) jsonObject1.put(map.get("device_id") + "_stateInPro", electricBoxState.getStorageState());
+            else jsonObject1.put(map.get("device_id") + "_stateInPro", 999);
             jsonObject.put((String) map.get("device_id"), jsonObject1);
         }
         return jsonObject;

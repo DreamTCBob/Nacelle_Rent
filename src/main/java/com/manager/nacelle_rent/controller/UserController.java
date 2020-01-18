@@ -235,7 +235,11 @@ public class UserController {
         int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin").get("result");
         if(flag == 1){
             List<User> areaAdminList = userMapper.getAllRentAdmin();
-            jsonObject.put("resultList",areaAdminList);
+            List<User> returnList = new ArrayList<>();
+            for(User user : areaAdminList){
+                if(projectMapper.getProjectIdByAdmin(user.getUserId()) == null) returnList.add(user);
+            }
+            jsonObject.put("resultList",returnList);
         }else{
             jsonObject.put("isLogin",false);
         }
@@ -498,12 +502,12 @@ public class UserController {
 
     @ApiOperation(value = "更新资质证书照片" ,  notes="工人")
     @PostMapping("/updateQualifications")
-    public JSONObject updateQualifications(HttpServletRequest request, @RequestParam String userId, @RequestParam int picNum){
+    public JSONObject updateQualifications(HttpServletRequest request, @RequestParam String userId, @RequestParam String type, @RequestParam int picNum){
         JSONObject jsonObject=new JSONObject();
         String password = request.getHeader("Authorization");
         int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
-            int result = userService.updateQualifications(userId, picNum);
+            int result = userService.updateQualifications(userId, type, picNum);
             switch (result) {
                 case 0:
                     jsonObject.put("update", "success");

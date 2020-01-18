@@ -51,8 +51,29 @@ public class ElectricBoxServiceImpl implements ElectricBoxService {
     }
 
     @Override
-    public JSONObject getElectricBoxConfig(String deviceId) {
-        return new JSONObject(userMapper.getAllParts(deviceId));
+    public JSONObject getElectricBoxConfig(String deviceId, int type) {
+        switch (type) {
+            case 0: {
+                return new JSONObject(userMapper.getAllParts(deviceId));
+            }
+            case 1: {
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("cameraId", userMapper.getCameraIdPart(deviceId));
+                return jsonObject;
+            }
+            case 2:{
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("hoistId", userMapper.getHoistIdPart(deviceId));
+                return jsonObject;
+            }
+            case 3: {
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("safeLockId", userMapper.getSafeLockIdPart(deviceId));
+                return jsonObject;
+            }
+            default:
+                return null;
+        }
     }
 
     @Override

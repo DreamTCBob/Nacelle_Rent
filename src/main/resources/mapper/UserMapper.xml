@@ -232,4 +232,22 @@
         WHERE device_id = #{deviceId}
     </select>
 
+    <select id="getCameraIdPart" resultType="String" parameterType="String">
+        SELECT camera_id
+        FROM electricbox_config
+        WHERE device_id = #{deviceId}
+    </select>
+
+    <select id="getHoistIdPart" resultType="String" parameterType="String">
+        SELECT hoist_id
+        FROM electricbox_config
+        WHERE device_id = #{deviceId}
+    </select>
+
+    <select id="getSafeLockIdPart" resultType="String" parameterType="String">
+        SELECT safe_lock_id
+        FROM electricbox_config
+        WHERE device_id = #{deviceId}
+    </select>
+
 </mapper>

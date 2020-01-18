@@ -42,7 +42,7 @@ public class RedisServiceImpl implements RedisService {
             project.setOwner(jsonObject.getString("owner"));
             project.setRegion(jsonObject.getString("region"));
             project.setCoordinate(jsonObject.getString("coordinate"));
-            project.setServicePeriod(Integer.parseInt(jsonObject.getString("servicePeriod")));
+            project.setServicePeriod(jsonObject.getString("servicePeriod"));
             return project;
         }else return null;
     }
