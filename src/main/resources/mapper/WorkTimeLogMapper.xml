@@ -9,11 +9,12 @@
         <result property="deviceId" column="device_id" />
         <result property="userId" column="user_id"/>
         <result property="timeWork" column="time_work"/>
+        <result property="startTime" column="start_time"/>
     </resultMap>
 
     <insert id="createWorkTimeLog">
-        INSERT INTO work_time_log(user_id,project_id,device_id,time_work)
-        VALUES(#{userId},#{projectId},#{deviceId},#{timeWork})
+        INSERT INTO work_time_log(user_id,project_id,device_id,time_work,start_time)
+        VALUES(#{userId},#{projectId},#{deviceId},#{timeWork},#{timeStamp})
     </insert>
 
     <select id="getWorkerTime" resultMap="workTimeLogResultMap">

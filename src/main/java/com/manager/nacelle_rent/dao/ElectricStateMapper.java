@@ -16,6 +16,8 @@ public interface ElectricStateMapper {
     void updateWorkState(@Param("deviceId") String deviceId, @Param("workingState") int workingState);
     void createWorkBox(@Param("deviceId") String deviceId, @Param("projectId") String projectId);
     void deleteWorkBox(@Param("deviceId") String deviceId);
+    void updateSiteNo(@Param("deviceId") String deviceId, @Param("siteNo") String siteNo);
+    String getSiteNo(@Param("deviceId") String deviceId);
     int sum(@Param("storageState") int storageState);///获取不同状态的吊篮总数
     int sumOfElectricBox();
     ElectricBoxState getBoxLog(@Param("deviceId") String deviceId);

@@ -22,6 +22,18 @@
         <result property="userId" column="user_id" />
         <result property="userName" column="user_name" />
     </resultMap>
+    <resultMap id="userCheckedRecordResultMap" type="com.manager.nacelle_rent.entity.UserCheckedRecord">
+        <result property="userId" column="user_id" />
+        <result property="userRole" column="role_id" />
+        <result property="userName" column="user_name" />
+        <result property="userPhone" column="user_phone" />
+        <result property="createDate" column="create_date" />
+        <result property="checkedDate" column="checked_date" />
+        <result property="result" column="result" />
+        <result property="verifier" column="verifier" />
+        <result property="remarks" column="remarks" />
+    </resultMap>
+
 
     <insert id="createInstaller" parameterType="String">
         INSERT INTO installer_team(project_id, user_id, device_id, name, phone, account_id, start_time)
@@ -102,7 +114,13 @@
     <select id="getAllAccount" resultMap="userResultMap">
         SELECT user_id, user_name, user_phone, user_image, role_id
         FROM user_info
-        WHERE isChecked = true
+        WHERE isChecked = true AND role_id IN ('rentAdmin', 'areaAdmin', 'inspector', 'worker_2', 'worker', 'worker_1', 'worker_3', 'InstallTeam', 'curtain_stoneWorker','curtain_electricWorker','curtain_glassWorker','curtain_glueWorker','coating_painter','coating_realStone','other_others','manager','govAdmin')
+    </select>
+
+    <select id="getAllWebAccount" resultMap="userResultMap">
+        SELECT user_id, user_name, user_phone, user_image, role_id
+        FROM user_info
+        WHERE isChecked = true AND role_id IN ('superWebAdmin', 'salesWebAdmin', 'engineeringWebAdmin', 'accountingWebAdmin')
     </select>
 
     <select id="getRegisterUnCheckedNum" resultType="int">
@@ -137,6 +155,24 @@
     <update id="updatePassword">
         UPDATE user_info
         SET user_password = #{newPassword}
+        WHERE  user_id = #{userId}
+    </update>
+
+    <update id="updateUserPhone">
+        UPDATE user_info
+        SET user_phone = #{phone}
+        WHERE  user_id = #{userId}
+    </update>
+
+    <update id="updateUserName">
+        UPDATE user_info
+        SET user_name = #{userName}
+        WHERE  user_id = #{userId}
+    </update>
+
+    <update id="updateUserRole">
+        UPDATE user_info
+        SET role_id = #{userRole}
         WHERE  user_id = #{userId}
     </update>
 
@@ -179,10 +215,28 @@
         WHERE project_id = #{projectId} AND user_id = #{userId} AND device_id = #{deviceId}
     </select>
 
+    <select id="getDeviceInstallInfoByDeviceId" resultType="java.util.HashMap">
+        SELECT *
+        FROM install_info
+        WHERE project_id = #{projectId} AND device_id = #{deviceId}
+    </select>
+
     <select id="getDeviceListByInstaller" resultType="java.util.HashMap">
         SELECT *
         FROM install_info
         WHERE project_id = #{projectId} AND user_id = #{userId}
+    </select>
+
+    <select id="getInstallerInfo" resultType="java.util.HashMap">
+        SELECT *
+        FROM installer_team
+        WHERE device_id = #{deviceId} AND user_id = #{userId}
+    </select>
+
+    <select id="getInstallCaptainInfo" resultType="java.util.HashMap">
+        SELECT *
+        FROM install_info
+        WHERE device_id = #{deviceId}
     </select>
 
     <select id="getProjectInstallInfoByProjectId" resultType="java.util.HashMap">
@@ -248,6 +302,17 @@
         SELECT safe_lock_id
         FROM electricbox_config
         WHERE device_id = #{deviceId}
+    </select>
+
+    <insert id="insertUserCheckedRecord" parameterType="com.manager.nacelle_rent.entity.UserCheckedRecord">
+        INSERT INTO
+        user_checked_record(user_id, user_name, user_phone, role_id, result, create_date, verifier)
+        VALUES (#{userId}, #{userName}, #{userPhone}, #{userRole}, #{result}, #{createDate}, #{verifier})
+    </insert>
+
+    <select id="getUserCheckedRecord" resultMap="userCheckedRecordResultMap">
+        SELECT *
+        FROM user_checked_record
     </select>
 
 </mapper>

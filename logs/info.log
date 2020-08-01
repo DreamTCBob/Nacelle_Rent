@@ -1,10 +1,7 @@
-2019-04-03 12:14:29,774 [http-nio-8080-exec-3] INFO  [com.manager.nacelle_rent.controller.UserController] - 18795883607,1 登录
-2019-04-03 12:20:56,858 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.UserController] - 18795883605,1 登录
-2019-04-03 12:53:50,355 [http-nio-8080-exec-5] INFO  [com.manager.nacelle_rent.controller.UserController] - 18795883605,1 登录
-2019-04-03 12:55:48,405 [http-nio-8080-exec-1] INFO  [com.manager.nacelle_rent.controller.UserController] - 18795883607,1 登录
-2019-04-03 12:58:05,367 [http-nio-8080-exec-8] INFO  [com.manager.nacelle_rent.controller.UserController] - 18795883605,1 登录
-2019-04-03 13:01:16,886 [http-nio-8080-exec-1] INFO  [com.manager.nacelle_rent.controller.UserController] - 18795883605,1 登录
-2019-04-03 13:01:37,178 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.UserController] - 18795883607,1 登录
-2019-04-03 13:06:15,175 [http-nio-8080-exec-6] INFO  [com.manager.nacelle_rent.controller.UserController] - 18795883605,1 登录
-2019-04-03 14:58:06,612 [http-nio-8080-exec-7] INFO  [com.manager.nacelle_rent.controller.UserController] - 9999,0 登录
-2019-04-03 16:42:45,707 [http-nio-8080-exec-3] INFO  [com.manager.nacelle_rent.controller.UserController] - 9999,0 登录
+2020-06-09 19:00:36,497 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.UserController] - 18877776666,1 登录
+2020-06-09 19:02:45,217 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.UserController] - 18877776666,1 登录
+2020-06-09 19:08:01,246 [http-nio-8080-exec-2] INFO  [com.manager.nacelle_rent.controller.UserController] - 18877776666,1 登录
+2020-06-09 19:09:18,598 [http-nio-8080-exec-1] INFO  [com.manager.nacelle_rent.controller.UserController] - 18877776666,1 登录
+2020-06-09 19:11:50,960 [http-nio-8080-exec-1] INFO  [com.manager.nacelle_rent.controller.UserController] - 18877776666,1 登录
+2020-06-09 19:20:45,475 [http-nio-8080-exec-1] INFO  [com.manager.nacelle_rent.controller.UserController] - 18877776666,1 登录
+2020-06-09 19:23:26,121 [http-nio-8080-exec-1] INFO  [com.manager.nacelle_rent.controller.UserController] - 18877776666,1 登录

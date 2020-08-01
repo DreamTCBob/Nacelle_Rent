@@ -30,6 +30,10 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
@@ -47,6 +51,8 @@
             <artifactId>mysql-connector-java</artifactId>
             <scope>runtime</scope>
         </dependency>
+
+
         <!-- redis -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -115,12 +121,6 @@
 
 
         <dependency>
-            <groupId>com.MiPush.jsonSimple</groupId>
-            <artifactId>json-simple</artifactId>
-            <version>1.1.1</version>
-        </dependency>
-
-        <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
             <version>5.0.7</version>
@@ -132,6 +132,11 @@
             <version>2_2_20</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.MiPush.jsonSimple</groupId>
+            <artifactId>json-simple</artifactId>
+            <version>1.1.1</version>
+        </dependency>
         <!--ftp相关依赖-->
         <dependency>
             <groupId>commons-net</groupId>
@@ -144,7 +149,6 @@
             <version>2.2</version>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>

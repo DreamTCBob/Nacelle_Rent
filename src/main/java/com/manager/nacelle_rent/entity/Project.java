@@ -21,8 +21,13 @@ public class Project {
     private String region;
     private String coordinate;
     private String servicePeriod;
+    private String regionManager;
+    private String marketSalesman;
+    private String remarks;
     private int deviceNum;
     private int workerNum;
+    private int perfectState;
+    private int planeState;
     private User adminAreaUser;
     volatile private User adminRentUser;
 
@@ -212,5 +217,45 @@ public class Project {
 
     public void setServicePeriod(String servicePeriod) {
         this.servicePeriod = servicePeriod;
+    }
+
+    public String getRegionManager() {
+        return regionManager;
+    }
+
+    public void setRegionManager(String regionManager) {
+        this.regionManager = regionManager;
+    }
+
+    public String getMarketSalesman() {
+        return marketSalesman;
+    }
+
+    public void setMarketSalesman(String marketSalesman) {
+        this.marketSalesman = marketSalesman;
+    }
+
+    public String getRemarks() {
+        return remarks;
+    }
+
+    public void setRemarks(String remarks) {
+        this.remarks = remarks;
+    }
+
+    public int getPerfectState() {
+        return perfectState;
+    }
+
+    public void setPerfectState(int perfectState) {
+        this.perfectState = perfectState;
+    }
+
+    public int getPlaneState() {
+        return planeState;
+    }
+
+    public void setPlaneState(int planeState) {
+        this.planeState = planeState;
     }
 }

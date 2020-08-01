@@ -25,6 +25,11 @@
         <result property="region" column="region" />
         <result property="coordinate" column="coordinate" />
         <result property="servicePeriod" column="service_period" />
+        <result property="regionManager" column="region_manager" />
+        <result property="marketSalesman" column="market_salesman" />
+        <result property="remarks" column="remarks" />
+        <result property="perfectState" column="perfect_state" />
+        <result property="planeState" column="plane_state" />
         <association property="adminAreaUser" javaType="com.manager.nacelle_rent.entity.User">
             <result property="userName" column="user_name"/>
         </association>
@@ -49,6 +54,42 @@
         <result property="maxLayers" column="max_layers"/>
         <result property="area" column="area"/>
         <result property="buildingNumbers" column="building_numbers"/>
+        <result property="constructionUnitContacts" column="construction_unit_contacts"/>
+        <result property="constructionUnitPhone" column="construction_unit_phone"/>
+        <result property="constructionUnitAddress" column="construction_unit_address"/>
+        <result property="totalPackageUnit" column="total_package_unit"/>
+        <result property="totalPackageUnitContacts" column="total_package_unit_contacts"/>
+        <result property="totalPackageUnitPhone" column="total_package_unit_phone"/>
+        <result property="totalPackageUnitAddress" column="total_package_unit_address"/>
+        <result property="supervisionUnitContacts" column="supervision_unit_contacts"/>
+        <result property="supervisionUnitPhone" column="supervision_unit_phone"/>
+        <result property="supervisionUnitAddress" column="supervision_unit_address"/>
+        <result property="subcontractor" column="subcontractor" />
+        <result property="subcontractorContacts" column="subcontractor_contacts" />
+        <result property="subcontractorPhone" column="subcontractor_phone" />
+        <result property="subcontractorAddress" column="subcontractor_address" />
+        <result property="nacelleInspectionUnitContacts" column="nacelle_inspection_unit_contacts"/>
+        <result property="nacelleInspectionUnitPhone" column="nacelle_inspection_unit_phone"/>
+        <result property="nacelleInspectionUnitAddress" column="nacelle_inspection_unit_address"/>
+        <result property="curtainWallConsultantUnitContacts" column="curtain_wall_consultant_unit_contacts"/>
+        <result property="curtainWallConsultantUnitPhone" column="curtain_wall_consultant_unit_phone"/>
+        <result property="curtainWallConsultantUnitAddress" column="curtain_wall_consultant_unit_address"/>
+        <result property="qualificationUnit" column="qualification_unit"/>
+        <result property="qualificationUnitContacts" column="qualification_unit_contacts"/>
+        <result property="qualificationUnitPhone" column="qualification_unit_phone"/>
+        <result property="qualificationUnitAddress" column="qualification_unit_address"/>
+        <result property="propertyUnit" column="property_unit"/>
+        <result property="propertyUnitContacts" column="property_unit_contacts"/>
+        <result property="propertyUnitPhone" column="property_unit_phone"/>
+        <result property="propertyUnitAddress" column="property_unit_address"/>
+        <result property="qualityInspectionUnit" column="quality_inspection_unit"/>
+        <result property="qualityInspectionUnitContacts" column="quality_inspection_unit_contacts"/>
+        <result property="qualityInspectionUnitPhone" column="quality_inspection_unit_phone"/>
+        <result property="qualityInspectionUnitAddress" column="quality_inspection_unit_address"/>
+        <result property="safetySupervisionUnit" column="safety_supervision_unit"/>
+        <result property="safetySupervisionUnitContacts" column="safety_supervision_unit_contacts"/>
+        <result property="safetySupervisionUnitPhone" column="safety_supervision_unit_phone"/>
+        <result property="safetySupervisionUnitAddress" column="safety_supervision_unit_address"/>
     </resultMap>
     <parameterMap id="projectSupInfoMapIn" type="com.manager.nacelle_rent.entity.ProjectSupInfo">
         <parameter property="projectId" resultMap="projectSupInfoMap"/>
@@ -61,14 +102,55 @@
         <parameter property="maxLayers" resultMap="projectSupInfoMap"/>
         <parameter property="area" resultMap="projectSupInfoMap"/>
         <parameter property="buildingNumbers" resultMap="projectSupInfoMap"/>
+        <parameter property="constructionUnitContacts" resultMap="projectSupInfoMap"/>
+        <parameter property="constructionUnitPhone" resultMap="projectSupInfoMap"/>
+        <parameter property="constructionUnitAddress" resultMap="projectSupInfoMap"/>
+        <parameter property="totalPackageUnit" resultMap="projectSupInfoMap"/>
+        <parameter property="totalPackageUnitContacts" resultMap="projectSupInfoMap"/>
+        <parameter property="totalPackageUnitPhone" resultMap="projectSupInfoMap"/>
+        <parameter property="totalPackageUnitAddress" resultMap="projectSupInfoMap"/>
+        <parameter property="supervisionUnitContacts" resultMap="projectSupInfoMap"/>
+        <parameter property="supervisionUnitPhone" resultMap="projectSupInfoMap"/>
+        <parameter property="supervisionUnitAddress" resultMap="projectSupInfoMap"/>
+        <parameter property="subcontractor" resultMap="projectSupInfoMap" />
+        <parameter property="subcontractorContacts" resultMap="projectSupInfoMap" />
+        <parameter property="subcontractorPhone" resultMap="projectSupInfoMap" />
+        <parameter property="subcontractorAddress" resultMap="projectSupInfoMap" />
+        <parameter property="nacelleInspectionUnitContacts" resultMap="projectSupInfoMap"/>
+        <parameter property="nacelleInspectionUnitPhone" resultMap="projectSupInfoMap"/>
+        <parameter property="nacelleInspectionUnitAddress" resultMap="projectSupInfoMap"/>
+        <parameter property="curtainWallConsultantUnitContacts" resultMap="projectSupInfoMap"/>
+        <parameter property="curtainWallConsultantUnitPhone" resultMap="projectSupInfoMap"/>
+        <parameter property="curtainWallConsultantUnitAddress" resultMap="projectSupInfoMap"/>
+        <parameter property="qualificationUnit" resultMap="projectSupInfoMap"/>
+        <parameter property="qualificationUnitContacts" resultMap="projectSupInfoMap"/>
+        <parameter property="qualificationUnitPhone" resultMap="projectSupInfoMap"/>
+        <parameter property="qualificationUnitAddress" resultMap="projectSupInfoMap"/>
+        <parameter property="propertyUnit" resultMap="projectSupInfoMap"/>
+        <parameter property="propertyUnitContacts" resultMap="projectSupInfoMap"/>
+        <parameter property="propertyUnitPhone" resultMap="projectSupInfoMap"/>
+        <parameter property="propertyUnitAddress" resultMap="projectSupInfoMap"/>
+        <parameter property="qualityInspectionUnit" resultMap="projectSupInfoMap"/>
+        <parameter property="qualityInspectionUnitContacts" resultMap="projectSupInfoMap"/>
+        <parameter property="qualityInspectionUnitPhone" resultMap="projectSupInfoMap"/>
+        <parameter property="qualityInspectionUnitAddress" resultMap="projectSupInfoMap"/>
+        <parameter property="safetySupervisionUnit" resultMap="projectSupInfoMap"/>
+        <parameter property="safetySupervisionUnitContacts" resultMap="projectSupInfoMap"/>
+        <parameter property="safetySupervisionUnitPhone" resultMap="projectSupInfoMap"/>
+        <parameter property="safetySupervisionUnitAddress" resultMap="projectSupInfoMap"/>
     </parameterMap>
 
     <select id="getProjectList" resultMap="projectResultMap" parameterType="int">
-        SELECT project_id, project_name, project_state, project_start, project_end, admin_area_id, project_builders, device_num, store_out, project_cert_url
+        SELECT project_id, project_name, project_state, project_start, project_end, admin_area_id, project_builders, device_num, store_out, project_cert_url,perfect_state,plane_state
         FROM   project_info
         WHERE  project_state= #{flag}
     </select>
 
+    <select id="getProjectName" resultType="String" parameterType="String">
+        SELECT project_name
+        FROM project_info
+        WHERE project_id = #{projectId}
+    </select>
     <select id="getAllProjectByAdmin" resultMap="projectResultMap" parameterType="String">
         SELECT *
         FROM   project_info
@@ -85,16 +167,27 @@
         FROM project_info
     </select>
 
+    <select id="getAlarmInfoAll" resultType="java.util.HashMap">
+        SELECT *
+        FROM alarm_history limit #{page},10
+    </select>
+
+    <select id="getAlarmInfoByType" resultType="java.util.HashMap">
+        SELECT *
+        FROM alarm_history
+        WHERE alarm_type = #{alarmType} limit #{page},10
+    </select>
+
     <select id="getAlarmInfoByDeviceId" resultType="java.util.HashMap">
         SELECT *
         FROM alarm_history
-        WHERE device_id = #{deviceId}
+        WHERE device_id = #{deviceId} limit #{page},10
     </select>
 
     <select id="getAlarmInfoByProjectId" resultType="java.util.HashMap">
         SELECT *
         FROM alarm_history
-        WHERE project_id = #{projectId}
+        WHERE project_id = #{projectId} limit #{page},10
     </select>
 
     <select id="getElectricBoxStopByProjectId" resultType="java.util.HashMap">
@@ -168,7 +261,7 @@
     <update id="updateProject">
         UPDATE project_info
         SET project_id=#{projectId}, project_name=#{projectName}, project_start=#{projectStart},
-        project_contract_url=#{projectContractUrl}, admin_area_id=#{adminAreaId}, project_state=#{projectState}
+        project_contract_url=#{projectContractUrl}, admin_area_id=#{adminAreaId}, project_state=#{projectState}, project_builders=#{projectBuilders}
         WHERE project_id= #{projectId}
     </update>
 
@@ -210,7 +303,8 @@
 
     <update id="updateKeyWord">
         UPDATE project_info
-        SET owner = #{owner}, region = #{region}, coordinate = #{coordinate}, service_period = #{servicePeriod}
+        SET owner = #{owner}, region = #{region}, coordinate = #{coordinate}, service_period = #{servicePeriod},
+        region_manager = #{regionManager}, market_salesman = #{marketSalesman}, perfect_state = #{perfectState}
         WHERE project_id= #{projectId}
     </update>
 
@@ -301,6 +395,24 @@
         WHERE project_id = #{projectId} AND device_id = #{deviceId} AND flag = 1
     </update>
 
+    <update id="updatePerfectState">
+        UPDATE project_info
+        SET perfect_state = #{perfectState}
+        WHERE project_id = #{projectId}
+    </update>
+
+    <update id="updatePlaneState">
+        UPDATE project_info
+        SET plane_state = #{planeState}
+        WHERE project_id = #{projectId}
+    </update>
+
+    <update id="updateProjectContractUrl">
+        UPDATE project_info
+        SET project_contract_url = #{projectContractUrl}
+        WHERE project_id = #{projectId}
+    </update>
+
     <insert id="uploadPlaneGraphInfo">
         INSERT INTO project_device(project_id, device_id, building_id, location_id, start_time, location)
         VALUES(#{projectId}, #{deviceId}, #{buildingId}, #{locationId}, current_timestamp, #{location})
@@ -314,9 +426,14 @@
 
     <select id="getProjectPlaneGraphOne" parameterType="String" resultType="java.util.HashMap">
         SELECT *
-        FROM project_device
-        WHERE project_id = #{projectId} AND building_id = #{buildingId} AND location_id = #{locationId}
+        FROM project_plane_graph
+        WHERE project_id = #{projectId} AND building_id = #{buildingId}
     </select>
+
+    <delete id="deleteProjectPlaneGraphOne">
+        DELETE FROM project_plane_graph
+        WHERE project_id = #{projectId} AND building_id = #{buildingId}
+    </delete>
 
     <insert id="uploadProjectPlaneGraphInfo">
         INSERT INTO project_plane_graph(project_id, building_id, location, time)
@@ -326,12 +443,49 @@
     <!--此处为项目补充信息的增删查改-->
 
     <update id="createProjectSupInfo" parameterMap="projectSupInfoMapIn">
-        INSERT INTO project_sup_info(project_id, project_name, construction_unit, supervision_unit, nacelle_inspection_unit, curtain_wall_consultant_unit, max_meters, max_layers, area, building_numbers)
-        VALUES (#{projectId}, #{projectName}, #{constructionUnit}, #{supervisionUnit}, #{nacelleInspectionUnit}, #{curtainWallConsultantUnit}, #{maxMeters}, #{maxLayers}, #{area}, #{buildingNumbers})
+        INSERT INTO project_sup_info(project_id, project_name, construction_unit, supervision_unit,
+        nacelle_inspection_unit, curtain_wall_consultant_unit, max_meters, max_layers, area, building_numbers,
+        construction_unit_contacts, construction_unit_phone, construction_unit_address, total_package_unit,
+        total_package_unit_contacts, total_package_unit_phone, total_package_unit_address, supervision_unit_contacts,
+        supervision_unit_phone, supervision_unit_address,subcontractor,subcontractor_contacts,subcontractor_phone,
+        subcontractor_address,nacelle_inspection_unit_contacts,nacelle_inspection_unit_phone,nacelle_inspection_unit_address,
+        curtain_wall_consultant_unit_contacts,curtain_wall_consultant_unit_phone,curtain_wall_consultant_unit_address,
+        qualification_unit,qualification_unit_contacts,qualification_unit_phone,qualification_unit_address,
+        property_unit,property_unit_contacts,property_unit_phone,property_unit_address,
+        quality_inspection_unit,quality_inspection_unit_contacts,quality_inspection_unit_phone,quality_inspection_unit_address,
+        safety_supervision_unit,safety_supervision_unit_contacts,safety_supervision_unit_phone,safety_supervision_unit_address)
+        VALUES (#{projectId}, #{projectName}, #{constructionUnit}, #{supervisionUnit},
+        #{nacelleInspectionUnit}, #{curtainWallConsultantUnit}, #{maxMeters}, #{maxLayers}, #{area},
+        #{buildingNumbers}, #{constructionUnitContacts}, #{constructionUnitPhone}, #{constructionUnitAddress},
+        #{totalPackageUnit}, #{totalPackageUnitContacts}, #{totalPackageUnitPhone}, #{totalPackageUnitAddress},
+        #{supervisionUnitContacts}, #{supervisionUnitPhone}, #{supervisionUnitAddress},
+        #{subcontractor},#{subcontractorContacts},#{subcontractorPhone},#{subcontractorAddress},
+        #{nacelleInspectionUnitContacts},#{nacelleInspectionUnitPhone},#{nacelleInspectionUnitAddress},
+        #{curtainWallConsultantUnitContacts},#{curtainWallConsultantUnitPhone},#{curtainWallConsultantUnitAddress},
+        #{qualificationUnit},#{qualificationUnitContacts},#{qualificationUnitPhone},#{qualificationUnitAddress},
+        #{propertyUnit},#{propertyUnitContacts},#{propertyUnitPhone},#{propertyUnitAddress},
+        #{qualityInspectionUnit},#{qualityInspectionUnitContacts},#{qualityInspectionUnitPhone},#{qualityInspectionUnitAddress},
+        #{safetySupervisionUnit},#{safetySupervisionUnitContacts},#{safetySupervisionUnitPhone},#{safetySupervisionUnitAddress})
         ON DUPLICATE KEY UPDATE
         project_id=VALUES(project_id),project_name=VALUES(project_name), construction_unit=VALUES(construction_unit),
         supervision_unit=VALUES(supervision_unit), nacelle_inspection_unit=VALUES(nacelle_inspection_unit),curtain_wall_consultant_unit=VALUES(curtain_wall_consultant_unit),
-        max_meters=VALUES(max_meters), max_layers=VALUES(max_layers), area=VALUES(area), building_numbers=VALUES(building_numbers)
+        max_meters=VALUES(max_meters), max_layers=VALUES(max_layers), area=VALUES(area), building_numbers=VALUES(building_numbers),
+        construction_unit_contacts=VALUES(construction_unit_contacts), construction_unit_phone=VALUES(construction_unit_phone), construction_unit_address=VALUES(construction_unit_address),
+        total_package_unit=VALUES(total_package_unit), total_package_unit_contacts=VALUES(total_package_unit_contacts),total_package_unit_phone=VALUES(total_package_unit_phone), total_package_unit_address=VALUES(total_package_unit_address),
+        supervision_unit_contacts=VALUES(supervision_unit_contacts),supervision_unit_phone=VALUES(supervision_unit_phone), supervision_unit_address=VALUES(supervision_unit_address),
+        subcontractor=VALUES(subcontractor),subcontractor_contacts=VALUES(subcontractor_contacts),subcontractor_phone=VALUES(subcontractor_phone),
+        subcontractor_address=VALUES(subcontractor_address),nacelle_inspection_unit_contacts=VALUES(nacelle_inspection_unit_contacts),
+        nacelle_inspection_unit_phone=VALUES(nacelle_inspection_unit_phone),nacelle_inspection_unit_address=VALUES(nacelle_inspection_unit_address),
+        curtain_wall_consultant_unit_contacts=VALUES(curtain_wall_consultant_unit_contacts),curtain_wall_consultant_unit_phone=VALUES(curtain_wall_consultant_unit_phone),
+        curtain_wall_consultant_unit_address=VALUES(curtain_wall_consultant_unit_address),
+        qualification_unit=VALUES(qualification_unit),qualification_unit_contacts=VALUES(qualification_unit_contacts),
+        qualification_unit_phone=VALUES(qualification_unit_phone),qualification_unit_address=VALUES(qualification_unit_address),
+        property_unit=VALUES(property_unit),property_unit_contacts=VALUES(property_unit_contacts),property_unit_phone=VALUES(property_unit_phone),
+        property_unit_address=VALUES(property_unit_address),
+        quality_inspection_unit=VALUES(quality_inspection_unit),quality_inspection_unit_contacts=VALUES(quality_inspection_unit_contacts),
+        quality_inspection_unit_phone=VALUES(quality_inspection_unit_phone),quality_inspection_unit_address=VALUES(quality_inspection_unit_address),
+        safety_supervision_unit=VALUES(safety_supervision_unit),safety_supervision_unit_contacts=VALUES(safety_supervision_unit_contacts),
+        safety_supervision_unit_phone=VALUES(safety_supervision_unit_phone),safety_supervision_unit_address=VALUES(safety_supervision_unit_address)
     </update>
 
     <select id="getProjectSupInfo" parameterType="String" resultMap="projectSupInfoMap">
@@ -339,5 +493,10 @@
         FROM project_sup_info
         WHERE project_id = #{projectId}
     </select>
+
+    <insert id="uploadInstallCheck">
+        INSERT INTO install_check(project_id, device_id, manager_id, dealer_id, description, record)
+        VALUES(#{projectId}, #{deviceId}, #{managerId}, #{dealerId}, #{description}, #{record})
+    </insert>
 
 </mapper>

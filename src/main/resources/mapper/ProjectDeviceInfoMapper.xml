@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.manager.nacelle_rent.dao.ProjectDeviceInfoMapper">
+    <resultMap id="projectDevice" type="com.manager.nacelle_rent.entity.ProjectDevice">
+        <result property="id" column="id" />
+        <result property="inWork" column="flag" />
+        <result property="projectId" column="project_id" />
+        <result property="projectName" column="project_name" />
+        <result property="deviceId" column="device_id" />
+        <result property="startTime" column="start_time" />
+        <result property="endTime" column="end_time" />
+    </resultMap>
+
+    <select id="getAllDevice" resultMap="projectDevice">
+        SELECT id, project_id, device_id, start_time, end_time, flag
+        FROM   project_device
+        ORDER BY id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="getAllDeviceByProjectId" resultMap="projectDevice">
+        SELECT id, project_id, device_id, start_time, end_time, flag
+        FROM   project_device
+        WHERE  project_id = #{projectId}
+        ORDER BY id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="getAllDeviceByDeviceId" resultMap="projectDevice">
+        SELECT id, project_id, device_id, start_time, end_time, flag
+        FROM   project_device
+        WHERE  device_id = #{deviceId}
+        ORDER BY id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="getAllDeviceByStartTime" resultMap="projectDevice">
+        SELECT id, project_id, device_id, start_time, end_time, flag
+        FROM   project_device
+        WHERE  start_time > #{startTime} and start_time &lt; #{endTime}
+        ORDER BY id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="getAllDeviceByEndTime" resultMap="projectDevice">
+        SELECT id, project_id, device_id, start_time, end_time, flag
+        FROM   project_device
+        WHERE  end_time > #{startTime} and end_time &lt; #{endTime}
+        ORDER BY id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="totalGetAllDevice" resultType="int">
+        SELECT COUNT(*)
+        FROM project_device
+    </select>
+
+    <select id="totalGetAllDeviceByProjectId" parameterType="String" resultType="int">
+        SELECT COUNT(*)
+        FROM project_device
+        WHERE project_id = #{projectId}
+    </select>
+
+    <select id="totalGetAllDeviceByDeviceId" parameterType="String" resultType="int">
+        SELECT COUNT(*)
+        FROM project_device
+        WHERE device_id = #{deviceId}
+    </select>
+
+    <select id="totalGetAllDeviceByStartTime" parameterType="String" resultType="int">
+        SELECT COUNT(*)
+        FROM project_device
+        WHERE  start_time > #{startTime} and start_time &lt; #{endTime}
+    </select>
+
+    <select id="totalGetAllDeviceByEndTime" parameterType="String" resultType="int">
+        SELECT COUNT(*)
+        FROM project_device
+        WHERE  end_time > #{startTime} and end_time &lt; #{endTime}
+    </select>
+
+</mapper>

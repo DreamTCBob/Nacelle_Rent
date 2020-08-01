@@ -4,8 +4,18 @@ public class WorkTimeLog {
     private int id;
     private String deviceId;
     private String projectId;
+    private String projectName;
     private String userId;
     private long timeWork;
+    private String startTime;
+
+    public String getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
+    }
 
     public int getId() {
         return id;
@@ -47,4 +57,11 @@ public class WorkTimeLog {
         this.timeWork = timeWork;
     }
 
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
 }

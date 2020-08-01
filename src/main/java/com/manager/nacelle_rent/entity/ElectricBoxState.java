@@ -10,6 +10,7 @@ public class ElectricBoxState {
     private String deviceId;
     private String projectId;
     private String storeIn;
+    private String siteNo;
 
     public int getWorkingState() { return workingState; }
 
@@ -51,5 +52,13 @@ public class ElectricBoxState {
 
     public void setStoreIn(String storeIn) {
         this.storeIn = storeIn;
+    }
+
+    public String getSiteNo() {
+        return siteNo;
+    }
+
+    public void setSiteNo(String siteNo) {
+        this.siteNo = siteNo;
     }
 }

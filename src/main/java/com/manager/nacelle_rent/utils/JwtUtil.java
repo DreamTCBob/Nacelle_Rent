@@ -39,6 +39,7 @@ public class JwtUtil {
                 .withClaim("userId",user.getUserId())
                 .withClaim("userRole",user.getUserRole())
                 .withClaim("userName",user.getUserName())
+                .withClaim("userPhone", user.getUserPhone())
              //   .withIssuedAt(iatDate) // sign time
              //   .withExpiresAt(expiresDate) // expire time
                 .sign(Algorithm.HMAC256(SECRET)); // signature

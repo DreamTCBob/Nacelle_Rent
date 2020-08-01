@@ -2,6 +2,7 @@ package com.manager.nacelle_rent.service;
 
 import com.alibaba.fastjson.JSONObject;
 import com.manager.nacelle_rent.entity.User;
+import com.manager.nacelle_rent.entity.UserCheckedRecord;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -15,15 +16,19 @@ public interface UserService {
     int getRegisterState(String userPhone);
     int judgeProAdmin(String userId);
     int deleteUser(String userId);
+    int deleteUserForAndroid(String userId);
     int updateQualifications(String userId, String type, int picNum);
     String createWebAdmin(Map<String, String> map);
     String createManageAdmin(Map<String, String> map);
     String getQualifications(String userId);
     String updatePassword(String userId, String oldPassword, String newPassword);
+    String updateWebAccountInfo(String userId, String oldPassword, int type, Map<String, Object> info);
     List<User> getRegisterUnChecked();
     List<User> getAllAccount();
+    List<User> getAllWebAccount();
+    List<UserCheckedRecord> getUserCheckedRecord(int type);
     int getRegisterUnCheckedNum();
-    boolean handleRegister(String userId, String handleResult);
+    boolean handleRegister(String userId, String handleResult, String verifier);
     boolean handleProjectBegin(String projectId, String handleResult);
     boolean handleProjectEnd(String projectId, String handleResult);
     boolean handleStoreIn(String projectId, String storeId, String handleResult);

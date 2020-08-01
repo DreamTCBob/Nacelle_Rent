@@ -11,6 +11,7 @@
         <result property="deviceId" column="device_id" />
         <result property="projectId" column="project_id" />
         <result property="storeIn" column="store_in" />
+        <result property="siteNo" column="site_no" />
     </resultMap>
     <select id="sumOfElectricBox" resultType="int">
         SELECT COUNT(*)
@@ -63,4 +64,14 @@
         SET project_id=#{projectId}
         WHERE device_id= #{deviceId}
     </update>
+    <update id="updateSiteNo">
+        UPDATE electricbox_info
+        SET site_no = #{siteNo}
+        WHERE device_id = #{deviceId}
+    </update>
+    <select id="getSiteNo" resultType="String" parameterType="String">
+        SELECT site_no
+        FROM electricbox_info
+        WHERE device_id = #{deviceId}
+    </select>
 </mapper>

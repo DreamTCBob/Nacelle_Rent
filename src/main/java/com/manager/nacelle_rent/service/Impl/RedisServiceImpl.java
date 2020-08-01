@@ -43,6 +43,16 @@ public class RedisServiceImpl implements RedisService {
             project.setRegion(jsonObject.getString("region"));
             project.setCoordinate(jsonObject.getString("coordinate"));
             project.setServicePeriod(jsonObject.getString("servicePeriod"));
+            project.setRegionManager(jsonObject.getString("regionManager"));
+            project.setMarketSalesman(jsonObject.getString("marketSalesman"));
+            project.setRemarks(jsonObject.getString("remarks"));
+            project.setPerfectState(Integer.parseInt(jsonObject.getString("perfectState")));
+            project.setPlaneState(Integer.parseInt(jsonObject.getString("planeState")));
+            project.setBoxList(jsonObject.getString("boxList"));
+            project.setWorker(jsonObject.getString("worker"));
+            project.setCompanyName(jsonObject.getString("companyName"));
+            project.setAdminAreaUser((User) jsonObject.get("adminAreaUser"));
+            project.setAdminRentUser((User) jsonObject.get("adminRentUser"));
             return project;
         }else return null;
     }
@@ -74,6 +84,16 @@ public class RedisServiceImpl implements RedisService {
         jsonObject.put("region", project.getRegion());
         jsonObject.put("coordinate",project.getCoordinate());
         jsonObject.put("servicePeriod",project.getServicePeriod());
+        jsonObject.put("regionManager",project.getRegionManager());
+        jsonObject.put("marketSalesman", project.getMarketSalesman());
+        jsonObject.put("remarks", project.getRemarks());
+        jsonObject.put("perfectState",String.valueOf(project.getPerfectState()));
+        jsonObject.put("planeState",String.valueOf(project.getPlaneState()));
+        jsonObject.put("boxList", project.getBoxList());
+        jsonObject.put("worker", project.getWorker());
+        jsonObject.put("companyName", project.getCompanyName());
+        jsonObject.put("adminAreaUser", project.getAdminAreaUser());
+        jsonObject.put("adminRentUser", project.getAdminRentUser());
         try {
             redisUtil.set(project.getProjectId(), jsonObject);
         }catch (Exception e){
@@ -109,7 +129,7 @@ public class RedisServiceImpl implements RedisService {
             user.setUserSex(jsonObject.getString("userSex"));
             user.setUserAccount(jsonObject.getString("userAccount"));
             user.setUserNative(jsonObject.getString("userNative"));
-            user.setChecked(Boolean.getBoolean(jsonObject.getString("isChecked")));
+            user.setChecked((Boolean) jsonObject.get("isChecked"));
             return user;
         }else return null;
     }
@@ -132,7 +152,7 @@ public class RedisServiceImpl implements RedisService {
         jsonObject.put("userPhone", user.getUserPhone());
         jsonObject.put("userImage", user.getUserImage());
         jsonObject.put("createDate", user.getCreateDate());
-        jsonObject.put("isChecked", String.valueOf(user.isChecked()));
+        jsonObject.put("isChecked", user.isChecked());
         try {
             redisUtil.set(user.getUserId(), jsonObject);
             if(user.getUserPhone() != null)

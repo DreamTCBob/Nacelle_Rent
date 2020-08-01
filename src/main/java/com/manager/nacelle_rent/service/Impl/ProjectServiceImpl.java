@@ -1,5 +1,6 @@
 package com.manager.nacelle_rent.service.Impl;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.manager.nacelle_rent.dao.*;
 import com.manager.nacelle_rent.entity.*;
@@ -9,7 +10,11 @@ import com.manager.nacelle_rent.service.ProjectService;
 import com.manager.nacelle_rent.service.RedisService;
 import com.manager.nacelle_rent.service.UserService;
 import com.manager.nacelle_rent.service.WorkTimeLogService;
+import com.manager.nacelle_rent.utils.DateUtil;
 import com.manager.nacelle_rent.utils.RedisUtil;
+import com.xiaomi.xmpush.server.Constants;
+import com.xiaomi.xmpush.server.Message;
+import com.xiaomi.xmpush.server.Sender;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPReply;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -66,14 +73,19 @@ public class ProjectServiceImpl implements ProjectService{
     private String FTPUserPassword;
     @Value("${FTPPlaneGraph}")
     private String FTPPlaneGraph;
+    @Value("${APP_SECRET_KEY}")
+    private String APP_SECRET_KEY;
+    @Value("${MY_PACKAGE_NAME}")
+    private String MY_PACKAGE_NAME;
 
-    private String[] projectStateList = {"草稿","待成立项目部","吊篮已安装","计费中","已结束","证书待审核","清单待配置","清单待审核"};
+    private String[] projectStateList = {"草稿","待成立项目部","吊篮安装验收","进行中","已结束","安监证书验收","清单待配置","清单待审核"};
 
     @Override
-    public List<Project> getProjectList(int flag){
+    public List<JSONObject> getProjectList(int flag){
         List<Project> projectList = projectMapper.getProjectList(flag);
+        List<JSONObject> jsonObjects = new ArrayList<>();
         for(int i = 0; i < projectList.size();i++){
-
+            JSONObject jsonObject = new JSONObject();
             Project project = projectList.get(i);
             String boxList = getBasketList(project.getProjectId());
             project.setBoxList(boxList);
@@ -81,8 +93,13 @@ public class ProjectServiceImpl implements ProjectService{
             if(project.getProjectEnd() == null){
                 project.setProjectEnd("—");
             }
+            project.setCompanyName(projectMapper.searchCompany(project.getProjectId()));
+            jsonObject.put("projectDetail", project);
+            ProjectSupInfo projectSupInfo = projectMapper.getProjectSupInfo(project.getProjectId()).get(0);
+            jsonObject.put("projectSupInfo", projectSupInfo);
+            jsonObjects.add(jsonObject);
         }
-        return projectList;
+        return jsonObjects;
     }
 
     @Override
@@ -202,12 +219,12 @@ public class ProjectServiceImpl implements ProjectService{
             }
             case 2:///使用中
             {
-                for(Project project : projectList){
+                for (Project project : projectList) {
                     List<String> deviceList = projectDeviceMapper.getDeviceList(project.getProjectId());
-                    for(String deviceId : deviceList){
-                        if(deviceId.equals("A") || deviceId.equals("B")) continue;
+                    for (String deviceId : deviceList) {
+                        if (deviceId.equals("A") || deviceId.equals("B")) continue;
                         int deviceState = electricStateMapper.getBoxLog(deviceId).getStorageState();
-                        if(deviceState == ElectricBoxStateEnum.getCode("待审核").getCode()
+                        if (deviceState == ElectricBoxStateEnum.getCode("待上传安监证书").getCode()
                                 || deviceState == ElectricBoxStateEnum.getCode("使用中").getCode()
                                 || deviceState == ElectricBoxStateEnum.getCode("待报停").getCode()
                                 || deviceState == ElectricBoxStateEnum.getCode("报停审核").getCode())
@@ -218,7 +235,20 @@ public class ProjectServiceImpl implements ProjectService{
             }
             default: projects = null;
         }
-        return projects == null ? null : new ArrayList<>(new HashSet<>(projects));
+        if (projects == null)
+            return null;
+        else{
+            Set<Project> set = new HashSet<>();
+            List<Project> list = new ArrayList<>();
+            for (Project element : projects) {
+                if (set.add(element)) {
+                    list.add(element);
+                }
+            }
+            projects.clear();
+            projects.addAll(list);
+            return projects;
+        }
     }
     @Override
     public List<JSONObject> getProjectListAll(){
@@ -298,6 +328,13 @@ public class ProjectServiceImpl implements ProjectService{
                 jsonObject.put("projectState",project.getProjectState());
                 jsonObject.put("storeOut",project.getStoreOut());
                 jsonObject.put("coordinate",project.getCoordinate());
+                jsonObject.put("regionManager",project.getRegionManager());
+                jsonObject.put("marketSalesman", project.getMarketSalesman());
+                jsonObject.put("perfectState", project.getPerfectState());
+                jsonObject.put("planeState", project.getPlaneState());
+                jsonObject.put("companyName", projectMapper.searchCompany(project.getProjectId()));
+                ProjectSupInfo projectSupInfo = projectMapper.getProjectSupInfo(project.getProjectId()).get(0);
+                jsonObject.put("projectSupInfo", projectSupInfo);
                 list.add(jsonObject);
             }
         }
@@ -320,6 +357,12 @@ public class ProjectServiceImpl implements ProjectService{
             }
             String device = project.getBoxList() == null?"":project.getBoxList();
             String[] deviceList = device.split(",");
+            for(String deviceId : deviceList){
+                if (deviceId == null || deviceId.equals("")) break;
+                if(electricStateMapper.getBoxLog(deviceId).getStorageState() != 2)
+                    device = device.replace(deviceId + ",","");
+            }
+            String[] deviceList1 = device.split(",");
             String image = project.getStoreOut() == null?"":project.getStoreOut();
             String[] imageList = image.split(",");
             jsonObject.put("projectId",project.getProjectId());
@@ -328,11 +371,19 @@ public class ProjectServiceImpl implements ProjectService{
             jsonObject.put("adminAreaId",project.getAdminAreaId());
             jsonObject.put("projectState",project.getProjectState());
             jsonObject.put("type", 1);
-            jsonObject.put("deviceList",deviceList);
+            jsonObject.put("deviceList",deviceList1);
             jsonObject.put("imageList", imageList);
             jsonObject.put("certificate",project.getProjectCertUrl().split(","));
             jsonObject.put("uploadTime",project.getProjectStart());
             jsonObject.put("coordinate",project.getCoordinate());
+            jsonObject.put("regionManager",project.getRegionManager());
+            jsonObject.put("marketSalesman", project.getMarketSalesman());
+            jsonObject.put("projectBuilders", project.getProjectBuilders());
+            jsonObject.put("companyName", projectMapper.searchCompany(project.getProjectId()));
+            jsonObject.put("perfectState", project.getPerfectState());
+            jsonObject.put("planeState", project.getPlaneState());
+            ProjectSupInfo projectSupInfo = projectMapper.getProjectSupInfo(project.getProjectId()).get(0);
+            jsonObject.put("projectSupInfo", projectSupInfo);
             returnList.add(jsonObject);
         }
         for(int i = 0; i < projectList1.size();i++){
@@ -346,6 +397,11 @@ public class ProjectServiceImpl implements ProjectService{
             }
             String device = project.getBoxList() == null?"":project.getBoxList();
             String[] deviceList = device.split(",");
+            for(String deviceId : deviceList){
+                if(electricStateMapper.getBoxLog(deviceId).getStorageState() != 21)
+                    device = device.replace(deviceId + ",","");
+            }
+            String[] deviceList1 = device.split(",");
             String image = project.getStoreOut() == null?"":project.getStoreOut();
             String[] imageList = image.split(",");
             jsonObject.put("projectId",project.getProjectId());
@@ -354,11 +410,19 @@ public class ProjectServiceImpl implements ProjectService{
             jsonObject.put("adminAreaId",project.getAdminAreaId());
             jsonObject.put("projectState",project.getProjectState());
             jsonObject.put("type", 1);
-            jsonObject.put("deviceList",deviceList);
+            jsonObject.put("deviceList",deviceList1);
             jsonObject.put("imageList", imageList);
             jsonObject.put("certificate",project.getProjectCertUrl().split(","));
             jsonObject.put("uploadTime",project.getProjectStart());
             jsonObject.put("coordinate",project.getCoordinate());
+            jsonObject.put("regionManager",project.getRegionManager());
+            jsonObject.put("marketSalesman", project.getMarketSalesman());
+            jsonObject.put("projectBuilders", project.getProjectBuilders());
+            jsonObject.put("perfectState", project.getPerfectState());
+            jsonObject.put("planeState", project.getPlaneState());
+            jsonObject.put("companyName", projectMapper.searchCompany(project.getProjectId()));
+            ProjectSupInfo projectSupInfo = projectMapper.getProjectSupInfo(project.getProjectId()).get(0);
+            jsonObject.put("projectSupInfo", projectSupInfo);
             returnList.add(jsonObject);
         }
         return returnList;
@@ -415,6 +479,7 @@ public class ProjectServiceImpl implements ProjectService{
                 jsonObject.put("verificationImage", electricBoxState.getStoreIn().split(",")[0]);
                 jsonObject.put("electricBoxState",electricBoxState.getStorageState());
                 jsonObject.put("workingState",electricBoxState.getWorkingState());
+                jsonObject.put("cameraId", userMapper.getAllParts(electricBoxState.getDeviceId()) == null ? "" : userMapper.getAllParts(electricBoxState.getDeviceId()).get("camera_id"));
                 returnList.add(jsonObject);
             }catch (Exception e){
                 e.printStackTrace();
@@ -440,7 +505,7 @@ public class ProjectServiceImpl implements ProjectService{
                 int deviceState = electricStateMapper.getBoxLog(deviceId).getStorageState();
                 if(deviceState == ElectricBoxStateEnum.getCode("待安装").getCode() || deviceState == ElectricBoxStateEnum.getCode("正在安装").getCode() || deviceState == ElectricBoxStateEnum.getCode("安装审核中").getCode())
                     installingProject.add(project);
-                if(deviceState == ElectricBoxStateEnum.getCode("待审核").getCode()
+                if(deviceState == ElectricBoxStateEnum.getCode("待上传安监证书").getCode()
                         || deviceState == ElectricBoxStateEnum.getCode("使用中").getCode()
                         || deviceState == ElectricBoxStateEnum.getCode("待报停").getCode()
                                 || deviceState == ElectricBoxStateEnum.getCode("报停审核").getCode())
@@ -574,16 +639,25 @@ public class ProjectServiceImpl implements ProjectService{
         /**
          * Redis缓存测试
          */
+        ProjectSupInfo projectSupInfo = projectMapper.getProjectSupInfo(projectId).get(0);
         Project projectDetail;
-        if(redisService.getProject(projectId) != null){
-            projectDetail = redisService.getProject(projectId);
-        }else {
-            projectDetail = projectMapper.getProjectDetail(projectId);
-            if(projectDetail != null) {
-                redisService.setProject(projectDetail);
-            }
-        }
+//        if(redisService.getProject(projectId) != null){
+//            projectDetail = redisService.getProject(projectId);
+//        }else {
+//            projectDetail = projectMapper.getProjectDetail(projectId);
+//            if(projectDetail != null) {
+//                redisService.setProject(projectDetail);
+//            }
+//        }
+        projectDetail = projectMapper.getProjectDetail(projectId);
         if(projectDetail == null) return null;
+        User adminRentUser = userMapper.getUserInfo(projectDetail.getAdminRentId());
+        User adminAreaUser = userMapper.getUserInfo(projectDetail.getAdminAreaId());
+        if(!projectDetail.getProjectStart().contains("-"))
+            projectDetail.setProjectStart(DateUtil.timeToDate(projectDetail.getProjectStart()));
+        projectDetail.setAdminRentUser(adminRentUser);
+        projectDetail.setAdminAreaUser(adminAreaUser);
+        projectDetail.setCompanyName(projectMapper.searchCompany(projectDetail.getProjectId()));
         String deviceList = getBasketList(projectId);
         projectDetail.setBoxList(deviceList);
         String worker = getWorkerList(projectId);
@@ -591,7 +665,7 @@ public class ProjectServiceImpl implements ProjectService{
         if(projectDetail.getProjectState() == null) {
             projectDetail.setProjectState("0");
             redisService.setProject(projectDetail);
-        }
+        }else redisService.setProject(projectDetail);
         switch (projectDetail.getProjectState()){
             case "21":
                 projectDetail.setProjectState(projectStateList[5]);
@@ -617,24 +691,41 @@ public class ProjectServiceImpl implements ProjectService{
         if(projectDetail.getProjectEnd() == null){
             projectDetail.setProjectEnd("—");
         }
+        User projectAdmin = userMapper.getUserInfo(projectDetail.getAdminProjectId());
+        String projectAdminName = projectAdmin == null ? "" : projectAdmin.getUserName();
         List<ElectricRes> electricRes = electricResMapper.getElectricRes(projectId);
+        jsonObject.put("projectAdminName", projectAdminName);
         jsonObject.put("projectDetail",projectDetail);
         jsonObject.put("electricRes",electricRes);
+        jsonObject.put("projectSupInfo", projectSupInfo);
         return jsonObject;
     }
     @Override
-    public List<JSONObject> getAlarmInfo(int type, String value){
+    public List<JSONObject> getAlarmInfo(int type, String value, int page){
         List<JSONObject> jsonObjects = new ArrayList<>();
+        int pageNumM = (page - 1) * 10;
         switch (type) {
+            case 0:///全部获取
+                List<Map<String, Object>> mapAll = projectMapper.getAlarmInfoAll(pageNumM);
+                for (Map<String, Object> map : mapAll) {
+                    jsonObjects.add(new JSONObject(map));
+                }
+                break;
             case 1:///按照吊篮号获取
-                List<Map<String, Object>> maps = projectMapper.getAlarmInfoByDeviceId(value);
+                List<Map<String, Object>> maps = projectMapper.getAlarmInfoByDeviceId(value, pageNumM);
                 for (Map<String, Object> map : maps) {
                     jsonObjects.add(new JSONObject(map));
                 }
                 break;
             case 2:///按照项目号获取
-                List<Map<String, Object>> map1 = projectMapper.getAlarmInfoByProjectId(value);
+                List<Map<String, Object>> map1 = projectMapper.getAlarmInfoByProjectId(value, pageNumM);
                 for (Map<String, Object> map : map1) {
+                    jsonObjects.add(new JSONObject(map));
+                }
+                break;
+            case 3:///按照报警类型获取
+                List<Map<String, Object>> map2 = projectMapper.getAlarmInfoByType(value, pageNumM);
+                for (Map<String, Object> map : map2) {
                     jsonObjects.add(new JSONObject(map));
                 }
                 break;
@@ -667,7 +758,16 @@ public class ProjectServiceImpl implements ProjectService{
             case 2:
                 List<Map<String, Object>> maps1 = projectMapper.getPlaneGraphInfo(projectId, buildingNum);
                 for (Map<String, Object> map : maps1) {
-                    jsonObjects.add(new JSONObject(map));
+                    JSONObject jsonObject = new JSONObject(map);
+                    String deviceId = jsonObject.getString("device_id");
+                    if (!deviceId.equals("A") && !deviceId.equals("B")) {
+                        int projectState = projectMapper.getProjectDetail(projectId) == null ? 0 : Integer.parseInt(projectMapper.getProjectDetail(projectId).getProjectState());
+                        int deviceState = electricStateMapper.getBoxLog(deviceId) == null ? 0 : electricStateMapper.getBoxLog(deviceId).getStorageState();
+                        jsonObject.put("project_state", projectState);
+                        jsonObject.put("basket_state", deviceState);
+                        jsonObject.put("basket_id", deviceId);
+                    }
+                    jsonObjects.add(jsonObject);
                 }
                 break;
         }
@@ -685,6 +785,7 @@ public class ProjectServiceImpl implements ProjectService{
     @Override
     public boolean editProjectDepartment(String projectId,String adminAreaId,String adminProjectId){
         try{
+            if(userMapper.judgeProAdmin(adminProjectId) != null) return false;
             if(projectMapper.editProjectDepartment(projectId,adminAreaId,adminProjectId)) {
                 userMapper.createProjectAdmin(projectId, adminProjectId);
                 projectMapper.updateState(projectId, ProjectStateEnum.getCode("清单待配置").getCode());
@@ -694,6 +795,7 @@ public class ProjectServiceImpl implements ProjectService{
             }
             return false;
         }catch(Exception ex){
+            ex.printStackTrace();
             return false;
         }
     }
@@ -702,6 +804,7 @@ public class ProjectServiceImpl implements ProjectService{
 //        try{projectDeviceMapper.getDevice(boxId);}catch (Exception e){
 //            e.printStackTrace();
 //        }
+        boxId = boxId.replaceAll("\\\\s*|\\t|\\r|\\n","");
         if(projectDeviceMapper.getDevice(boxId).size() == 0){ // 当前吊篮不在任何项目中
             if(electricStateMapper.getBoxLog(boxId) == null){
                 electricStateMapper.createWorkBox(boxId, projectId);
@@ -792,19 +895,23 @@ public class ProjectServiceImpl implements ProjectService{
         Timestamp timeStart = electricResMapper.getElectricBoxState(userId) == null ? null : electricResMapper.getElectricBoxState(userId).getTimeStart();
         long hour = 0;
         if(timeStart != null) {
-            long nd = 1000 * 24 * 60 * 60;
-            long nh = 1000 * 60 * 60;
+            long nd = 1000  * 60;
+//            long nh = 1000 * 60 * 60;
             Date date = timeStart;
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(date);
+            cal.add(Calendar.HOUR_OF_DAY, -8);
+            date = cal.getTime();
             Date now = new Date();
             long diff = now.getTime() - date.getTime();
-            hour = (diff % nd / nh) + 1;
+            hour = diff / nd;
         }
         if(boxList.contains(boxId)){
             try {
                 electricResMapper.deleteWorkBox(userId);
                 if(electricResMapper.getDevice(boxId).size() == 0)
                     electricStateMapper.updateWorkState(boxId, 0);
-                workTimeLogService.createWorkTimeLog(userId, projectId, boxId, hour);
+                workTimeLogService.createWorkTimeLog(userId, projectId, boxId, hour, timeStart);
                 return true;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -878,7 +985,7 @@ public class ProjectServiceImpl implements ProjectService{
                     if(storage != null)
                         for(int i = 0 ; i < storage.length ; i++){
                             if(electricStateMapper.getBoxLog(storage[i]).getStorageState() != ElectricBoxStateEnum.getCode("使用中").getCode() && electricStateMapper.getBoxLog(storage[i]).getStorageState() != 0)
-                                electricStateMapper.updateStateOut(storage[i],ElectricBoxStateEnum.getCode("待审核").getCode());
+                                electricStateMapper.updateStateOut(storage[i],ElectricBoxStateEnum.getCode("待上传安监证书").getCode());
                         }
                     return 0;
                 } catch (Exception e) {
@@ -889,7 +996,64 @@ public class ProjectServiceImpl implements ProjectService{
         }else return 2;///项目不存在
     }
     @Override
-    public int beginProject(String projectId, String storageList, String managerId){
+    public int installCheck(String projectId, String deviceId, String managerId, String dealerId, String description, int check){
+        String userId = (String) userMapper.getDeviceInstallInfoByDeviceId(projectId, deviceId).get("user_id");
+        if (check == 1){
+            projectMapper.updateState(projectId,ProjectStateEnum.getCode("吊篮安装验收").getCode());
+            Project project1 = projectMapper.getProjectDetail(projectId);
+            redisService.setProject(project1);
+            electricStateMapper.updateStateOut(deviceId, ElectricBoxStateEnum.getCode("待上传安监证书").getCode());
+            projectMapper.uploadInstallCheck(projectId, deviceId, userId, dealerId, description, "通过");
+            return 0;
+        }else {
+            userMapper.updateAllInstallState(projectId, userId, deviceId, 0);
+            electricStateMapper.updateStateOut(deviceId, ElectricBoxStateEnum.getCode("正在安装").getCode());
+            projectMapper.uploadInstallCheck(projectId, deviceId, userId, dealerId, description, "不通过");
+            //发个通知
+            try {
+                sendMessageToAreaAdmin(userId, deviceId);
+                return 0;
+            }catch (Exception e){
+                return 1;
+            }
+        }
+    }
+    private void sendMessageToAreaAdmin(String alias, String deviceId) throws Exception {
+        Constants.useOfficial();
+        Map<String,String> map = new HashMap<String, String>();
+        Sender sender = new Sender(APP_SECRET_KEY);
+        String messagePayload = "这是一条消息";
+        String title = "通知";
+        String description = "吊篮" + deviceId + "安装审核不通过";
+        //alias非空白, 不能包含逗号, 长度小于128
+        map.put("type","3");
+        Message message = new Message.Builder()
+                .title(title)
+                .description(description).payload(messagePayload)
+                .restrictedPackageName(MY_PACKAGE_NAME)
+                .notifyType(-1)     // 使用默认提示音提示
+                .extra(map)
+                .build();
+        sender.sendToAlias(message, alias, 3); //根据alias, 发送消息到指定设备上
+    }
+    @Override
+    public int beginProject(String projectId, String storageList, String managerId, int check){
+        if (check == 0){
+            projectMapper.updateState(projectId,ProjectStateEnum.getCode("吊篮安装验收").getCode());
+            Project project1 = projectMapper.getProjectDetail(projectId);
+            redisService.setProject(project1);
+            String[] storage = null;
+            if(storageList != null)
+                storage = storageList.split(",");
+            if(storage != null) {
+                for (int i = 0; i < storage.length; i++) {
+                    String userId = (String) userMapper.getDeviceInstallInfoByDeviceId(projectId, storage[i]).get("user_id");
+                    userMapper.updateAllInstallState(projectId, userId, storage[i], 0);
+                    electricStateMapper.updateStateOut(storage[i], ElectricBoxStateEnum.getCode("正在安装").getCode());
+                }
+            }
+            return 0;
+        }
         Project project;
         if(redisService.getProject(projectId) != null){
             project = redisService.getProject(projectId);
@@ -1077,6 +1241,7 @@ public class ProjectServiceImpl implements ProjectService{
         if(user == null) return 0;
         if(!user.getUserRole().equals("InstallTeam")) return 0;
         for(String deviceId : deviceArray){
+            if(userMapper.getDeviceInstallInfoByDeviceId(projectId, deviceId) != null) return  0;
             if(projectMapper.insertInstallInfo(userId, projectId, deviceId)) {
                 electricStateMapper.updateStateOut(deviceId, ElectricBoxStateEnum.getCode("正在安装").getCode());
             }
@@ -1125,6 +1290,41 @@ public class ProjectServiceImpl implements ProjectService{
             ftp.storeFile(fileName,file);
             file.close();
             ftp.logout();
+            return 1;
+        }catch (IOException ex){
+            return 0;
+        }finally {
+            if(ftp.isConnected()){
+                try{
+                    ftp.disconnect();
+                }catch (IOException ioe){}
+            }
+        }
+    }
+    @Override
+    public int uploadProjectContract(InputStream file, String projectId, int type) {
+        if(projectId.equals("") || file == null){
+            return 0;
+        }
+        String fileName = type == 1 ? projectId + ".jpg" : projectId + ".pdf";
+        FTPClient ftp = new FTPClient();
+        ftp.setControlEncoding("GBK");
+        try {
+            int reply;
+            ftp.connect(FTPFileURL,21);
+            ftp.login(FTPUserName,FTPUserPassword);
+            reply = ftp.getReplyCode();
+            if(!FTPReply.isPositiveCompletion(reply)){
+                ftp.disconnect();
+                return 0;
+            }
+            ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
+            ftp.makeDirectory(FTPPlaneGraph + projectId + "/");
+            ftp.changeWorkingDirectory(FTPPlaneGraph + projectId + "/");
+            ftp.storeFile(fileName,file);
+            file.close();
+            ftp.logout();
+            projectMapper.updateProjectContractUrl(projectId, fileName);
             return 1;
         }catch (IOException ex){
             return 0;
@@ -1214,7 +1414,7 @@ public class ProjectServiceImpl implements ProjectService{
         String device = getBasketList(projectId);
         String[] deviceList = device.split(",");
         for(int i = 0 ; i < deviceList.length ; i++){
-            if(electricStateMapper.getBoxLog(deviceList[i]).getStorageState() != ElectricBoxStateEnum.getCode("待审核").getCode()){
+            if(electricStateMapper.getBoxLog(deviceList[i]).getStorageState() != ElectricBoxStateEnum.getCode("待上传安监证书").getCode()){
                 device = device.replace(deviceList[i] + ",", "");
             }
         }
@@ -1293,6 +1493,7 @@ public class ProjectServiceImpl implements ProjectService{
         }else {
             if(redisService.getProject(projectId) != null){
                 project = redisService.getProject(projectId);
+                project.setBoxList(getBasketList(projectId));
             }else {
                 project = projectMapper.getProjectDetail(projectId);
                 if(project != null){
@@ -1440,6 +1641,16 @@ public class ProjectServiceImpl implements ProjectService{
         return jsonObject;
     }
     @Override
+    public JSONObject getProjectSupInfo(String projectId) {
+        List<ProjectSupInfo> projectSupInfoList  = projectMapper.getProjectSupInfo(projectId);
+        JSONObject jsonObject = new JSONObject();
+        if (projectSupInfoList.size() != 0){
+            ProjectSupInfo projectSupInfo = projectSupInfoList.get(0);
+            jsonObject.put(projectId, projectSupInfo);
+        }
+        return jsonObject;
+    }
+    @Override
     public int storageIn(String projectId, String deviceId){
         ElectricBoxState electricBoxState = electricStateMapper.getBoxLog(deviceId);
         List<String> isInProject = projectDeviceMapper.getDevice(deviceId);
@@ -1476,9 +1687,14 @@ public class ProjectServiceImpl implements ProjectService{
         switch (type){
             case 1:
                 for(String buildingId :  info.keySet()){
-                    if(projectMapper.getProjectPlaneGraphOne(projectId, buildingNum, (String) info.get(buildingId)) != null) continue;
+                    if(projectMapper.getProjectPlaneGraphOne(projectId, buildingId).size() != 0){
+                        projectMapper.deleteProjectPlaneGraphOne(projectId, buildingId);
+                        projectMapper.uploadProjectPlaneGraphInfo(projectId, buildingId, (String) info.get(buildingId));
+                        continue;
+                    }
                     if(!projectMapper.uploadProjectPlaneGraphInfo(projectId, buildingId, (String) info.get(buildingId))) return 0;
                 }
+                projectMapper.updatePlaneState(projectId, 1);
                 return 1;
             case 2:
                 for(String deviceId : info.keySet()){
@@ -1496,5 +1712,35 @@ public class ProjectServiceImpl implements ProjectService{
                 return 1;
         }
         return 0;
+    }
+    @Override
+    public int updateSiteNo(String deviceId, String siteNo) {
+        try {
+            electricStateMapper.updateSiteNo(deviceId, siteNo);
+            return 0;
+        }catch (Exception e){
+            e.printStackTrace();
+            return 1;
+        }
+    }
+    @Override
+    public JSONObject getSiteNo(String deviceId) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("siteNo", electricStateMapper.getSiteNo(deviceId));
+        return jsonObject;
+    }
+    @Override
+    public JSONObject getInstallInfo(String deviceId) {
+        JSONObject jsonObject = new JSONObject();
+        Map<String, Object> map = userMapper.getAllParts(deviceId);//绑定设备信息
+        List<Map<String, Object>> list1 = userMapper.getInstallCaptainInfo(deviceId);//获取安装队伍信息
+        for (Map<String, Object> installTeam : list1){
+            String installTeamId = (String) installTeam.get("user_id");
+            List<Map<String, Object>> list = userMapper.getInstallerInfo(deviceId, installTeamId);//获取安装队伍人员信息
+            jsonObject.put("installTeam_" + installTeamId, list);
+        }
+        jsonObject.put("deviceInfo", map);
+        jsonObject.put("installTeamInfo", list1);
+        return jsonObject;
     }
 }

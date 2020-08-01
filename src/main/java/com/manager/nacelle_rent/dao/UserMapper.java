@@ -3,6 +3,7 @@ package com.manager.nacelle_rent.dao;
 
 import com.manager.nacelle_rent.entity.SimpleUser;
 import com.manager.nacelle_rent.entity.User;
+import com.manager.nacelle_rent.entity.UserCheckedRecord;
 import javafx.beans.binding.ObjectExpression;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -39,13 +40,20 @@ public interface UserMapper {
     //得到所有租方管理员的id和姓名
     List<User> getAllRentAdmin();
 
+    List<UserCheckedRecord> getUserCheckedRecord();
+
     //区域管理员、租方管理员、工作人员注册，默认是未认证状态
     void registerUser(User user);
+
+    //新增人员的审核记录
+    void insertUserCheckedRecord(UserCheckedRecord userCheckedRecord);
 
     //获得所有尚未经过审核的账号信息
     List<User>  getRegisterUnChecked();
     //获取所有审核过的账号信息
     List<User>  getAllAccount();
+    //获取所有的Web用户信息
+    List<User> getAllWebAccount();
 
     //获得所有尚未经审核的账号数目
     int getRegisterUnCheckedNum();
@@ -56,7 +64,9 @@ public interface UserMapper {
     void deleteUser(String[] multipleUserId);
     void updateRegisterState(String[] multipleUserId);
     void updatePassword(@Param("userId") String userId, @Param("newPassword") String newPassword);
-
+    void updateUserPhone(@Param("userId") String userId, @Param("phone") String phone);
+    void updateUserRole(@Param("userId") String userId, @Param("userRole") String userRole);
+    void updateUserName(@Param("userId") String userId, @Param("userName") String userName);
     void createWebAdmin(@Param("userRole") String userRole, @Param("userName") String userName, @Param("userPassword") String userPassword,
                         @Param("userId") String userId, @Param("userPhone") String userPhone, @Param("isChecked") int isChecked);
 
@@ -78,8 +88,11 @@ public interface UserMapper {
     List<Map<String, Object>> getInstaller(@Param("projectId") String projectId, @Param("userId") String userId, @Param("deviceId") String deviceId);
     List<Map<String, Object>> getDeviceListByInstaller(@Param("projectId") String projectId, @Param("userId") String userId);
     List<Map<String, Object>> getProjectInstallInfoByProjectId(@Param("projectId") String projectId);
+    List<Map<String, Object>> getInstallerInfo(@Param("deviceId") String deviceId, @Param("userId") String userId);
+    List<Map<String, Object>> getInstallCaptainInfo(@Param("deviceId") String deviceId);
     Map<String, Object> getAllParts(@Param("deviceId") String deviceId);
     Map<String, Object> getDeviceInstallInfo(@Param("projectId") String projectId, @Param("userId") String userId, @Param("deviceId") String deviceId);
+    Map<String, Object> getDeviceInstallInfoByDeviceId(@Param("projectId") String projectId, @Param("deviceId") String deviceId);
     List<String> getProjectByInstaller(@Param("userId") String userId);
 
     String getCameraIdPart(@Param("deviceId") String deviceId);

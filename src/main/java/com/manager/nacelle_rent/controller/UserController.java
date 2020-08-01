@@ -9,12 +9,14 @@ import com.manager.nacelle_rent.dao.UserMapper;
 import com.manager.nacelle_rent.entity.ElectricRes;
 import com.manager.nacelle_rent.entity.Project;
 import com.manager.nacelle_rent.entity.User;
+import com.manager.nacelle_rent.entity.UserCheckedRecord;
 import com.manager.nacelle_rent.service.ProjectService;
 import com.manager.nacelle_rent.service.RedisService;
 import com.manager.nacelle_rent.service.UserService;
 import com.manager.nacelle_rent.utils.FileUtil;
 import com.manager.nacelle_rent.utils.JwtUtil;
 import com.manager.nacelle_rent.utils.UserCheckUtil;
+import com.manager.nacelle_rent.utils.mapUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.log4j.Logger;
@@ -176,6 +178,8 @@ public class UserController {
                 String name = claims.get("userName").asString();
                 jsonObject.put("userRole",role);
                 jsonObject.put("userName",name);
+                jsonObject.put("userId", claims.get("userId").asString());
+                jsonObject.put("userPhone", claims.get("userPhone").asString());
                 jsonObject.put("isAllowed",true);
             }catch(Exception ex){
                 jsonObject.put("isAllowed",false);
@@ -192,7 +196,7 @@ public class UserController {
         JSONObject jsonObject=new JSONObject();
         String password = request.getHeader("Authorization");
         //String password = CookieUtil.getCookie(request, "token");
-        int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin").get("result");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
             List<User> areaAdminList = userMapper.getAllAreaAdmin();
             jsonObject.put("resultList",areaAdminList);
@@ -207,7 +211,7 @@ public class UserController {
     public JSONObject getUserByPhoneOrName(HttpServletRequest request, @RequestParam String information){
         JSONObject jsonObject=new JSONObject();
         String password = request.getHeader("Authorization");
-        int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin").get("result");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
             List<User> user;
             List<User> userReturn = new ArrayList<>();
@@ -216,7 +220,7 @@ public class UserController {
             else user = userMapper.getUserNameDepartment(information);
             if(user != null)
                 for(User user1 : user){
-                    if(user1.getUserRole().contains("worker"))
+                    if(user1.getUserRole().contains("orker") || user1.getUserRole().equals("coating_painter"))
                         userReturn.add(user1);
                 }
             jsonObject.put("User",userReturn);
@@ -232,7 +236,7 @@ public class UserController {
         JSONObject jsonObject=new JSONObject();
         String password = request.getHeader("Authorization");
         //String password = CookieUtil.getCookie(request, "token");
-        int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin").get("result");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
             List<User> areaAdminList = userMapper.getAllRentAdmin();
             List<User> returnList = new ArrayList<>();
@@ -253,10 +257,13 @@ public class UserController {
 
         //进行身份验证，只能通过cookie认证
         String password = request.getHeader("Authorization");
-        int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin").get("result");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
             //int unCheckedNum = userService.getRegisterUnCheckedNum();
             List<User> unCheckedArray = userService.getRegisterUnChecked();
+            for(User user : unCheckedArray){
+                user.setUserRole(mapUtils.roleMap.get(user.getUserRole()));
+            }
             int unCheckedNum = unCheckedArray.size();
             jsonObject.put("isAllowed",true);
             jsonObject.put("unCheckedNum",unCheckedNum);
@@ -273,9 +280,9 @@ public class UserController {
     public JSONObject handleRegister(HttpServletRequest request, @RequestBody Map<String,String> map){
         JSONObject jsonObject=new JSONObject();
         String password = request.getHeader("Authorization");
-        int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin").get("result");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
-            if(userService.handleRegister(map.get("multipleUserId"),map.get("handleResult"))){
+            if(userService.handleRegister(map.get("multipleUserId"),map.get("handleResult"), map.get("verifier"))){
                 jsonObject.put("handleSubmit","success");
             }
         }else{
@@ -289,7 +296,7 @@ public class UserController {
     public JSONObject handleProjectBegin(HttpServletRequest request, @RequestBody Map<String,String> map){
         JSONObject jsonObject=new JSONObject();
         String password = request.getHeader("Authorization");
-        int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin").get("result");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
             if(userService.handleProjectBegin(map.get("projectId"),map.get("handleResult"))){
                 jsonObject.put("handleSubmit","success");
@@ -305,7 +312,7 @@ public class UserController {
     public JSONObject handleProjectEnd(HttpServletRequest request, @RequestBody Map<String,String> map){
         JSONObject jsonObject=new JSONObject();
         String password = request.getHeader("Authorization");
-        int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin").get("result");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
             if(userService.handleProjectEnd(map.get("projectId"),map.get("handleResult"))){
                 jsonObject.put("handleSubmit","success");
@@ -321,7 +328,7 @@ public class UserController {
     public JSONObject handleStoreIn(HttpServletRequest request, @RequestBody Map<String,String> map){
         JSONObject jsonObject=new JSONObject();
         String password = request.getHeader("Authorization");
-        int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin").get("result");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
             if(userService.handleStoreIn(map.get("projectId"),map.get("storeId"),map.get("handleResult"))){
                 jsonObject.put("handleSubmit","success");
@@ -339,11 +346,29 @@ public class UserController {
 
         //进行身份验证，只能通过JWT认证
         String password = request.getHeader("Authorization");
-        int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin").get("result");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
             List<User> allAccount = userService.getAllAccount();
             jsonObject.put("isAllowed",true);
             jsonObject.put("allAccount", allAccount);
+        }else{
+            jsonObject.put("isAllowed",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "获取所有Web管理员账号" ,  notes="只对超管开放")
+    @GetMapping("/getAllWebAccount")
+    public JSONObject getAllWebAccount(HttpServletRequest request){
+        JSONObject jsonObject=new JSONObject();
+
+        //进行身份验证，只能通过JWT认证
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            List<User> allWebAccount = userService.getAllWebAccount();
+            jsonObject.put("isAllowed",true);
+            jsonObject.put("allAccount", allWebAccount);
         }else{
             jsonObject.put("isAllowed",false);
         }
@@ -356,7 +381,7 @@ public class UserController {
 
         //进行身份验证，只能通过JWT认证
         String password = request.getHeader("Authorization");
-        int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin").get("result");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
             try{
                 jsonObject.put("isAllowed",true);
@@ -399,7 +424,7 @@ public class UserController {
                 Project project = null;
                 String projectId = "";
                 String projectName = "";
-                if(userInfo.getUserRole().contains("worker"))
+                if(userInfo.getUserRole().contains("orker") || userInfo.getUserRole().equals("coating_painter") || userInfo.getUserRole().equals("coating_realStone"))
                     projectId = projectWorkerMapper.getWorker(userId).size() == 0 ? "" : projectWorkerMapper.getWorker(userId).get(0);
                 else if(userInfo.getUserRole().equals("rentAdmin")) {
                     if(projectMapper.getProjectIdByAdmin(userId)!=null)
@@ -418,7 +443,7 @@ public class UserController {
 
                 if(project != null)
                     projectName = project.getProjectName();
-                if(userInfo.getUserRole().contains("worker")) {///////如果是工人就返回状态
+                if(userInfo.getUserRole().contains("orker") || userInfo.getUserRole().equals("coating_painter") || userInfo.getUserRole().equals("coating_realStone")) {///////如果是工人就返回状态
                     ElectricRes electricRes = electricResMapper.getElectricBoxState(userId);
                     if (electricRes != null)
                         jsonObject.put("userState", 1);///////1就是要离开，就是现在正在工作
@@ -449,7 +474,7 @@ public class UserController {
     public JSONObject createWebAdmin(HttpServletRequest request, @RequestBody Map<String,String> map){
         JSONObject jsonObject=new JSONObject();
         String password = request.getHeader("Authorization");
-        int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin").get("result");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
             String result = userService.createWebAdmin(map);
             if(result.equals("fail"))
@@ -467,7 +492,7 @@ public class UserController {
     public JSONObject createManageAdmin(HttpServletRequest request, @RequestBody Map<String,String> map){
         JSONObject jsonObject=new JSONObject();
         String password = request.getHeader("Authorization");
-        int flag = (int)UserCheckUtil.checkUser("", password, "superWebAdmin").get("result");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
             String result = userService.createManageAdmin(map);
             if(result.equals("fail") || result.equals("repeat"))
@@ -574,6 +599,25 @@ public class UserController {
         if(flag == 1){
             jsonObject.put("isLogin",true);
             int result = userService.deleteUser(userId);
+            if(result == 1)
+                jsonObject.put("delete","success");
+            else
+                jsonObject.put("delete","fail");
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "删除用户" ,  notes="")
+    @PostMapping("/deleteUserForAndroid")
+    public JSONObject deleteUserForAndroid(HttpServletRequest request, @RequestParam String userId){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            int result = userService.deleteUserForAndroid(userId);
             if(result == 1)
                 jsonObject.put("delete","success");
             else
@@ -712,5 +756,36 @@ public class UserController {
         return jsonObject;
     }
 
+    @ApiOperation(value = "获取所有的人员审核记录" ,  notes="")
+    @GetMapping("/getUserCheckedRecord")
+    public JSONObject getUserCheckedRecord(HttpServletRequest request, int type){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            List<UserCheckedRecord> list = userService.getUserCheckedRecord(1);
+            jsonObject.put("info", list);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "更新Web用户信息" ,  notes="对所有人开放")
+    @PostMapping("/updateWebAccountInfo")
+    public JSONObject updateWebAccountInfo(HttpServletRequest request, @RequestBody Map<String, Object> info){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            String result = userService.updateWebAccountInfo((String) info.get("userId"),(String) info.get("oldPassword"),(Integer) info.get("type"), info);
+            jsonObject.put("result", result);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
 
 }
