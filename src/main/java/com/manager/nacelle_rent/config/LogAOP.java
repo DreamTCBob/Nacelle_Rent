@@ -1,6 +1,7 @@
 package com.manager.nacelle_rent.config;
 
 import cn.hutool.db.sql.SqlBuilder;
+import com.alibaba.fastjson.JSONObject;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
@@ -27,7 +28,12 @@ public class LogAOP {
     @AfterReturning(returning = "ret", pointcut = "webLog()")
     public void doAfterReturning(Object ret) throws Throwable {
         // 处理完请求，返回内容
-        System.out.println("方法的返回值 : " + ret);
+        System.out.println("方法的返回值 : ");
+        JSONObject jsonObject = (JSONObject) ret;
+        if (jsonObject == null) return;
+        for (String s : jsonObject.keySet()){
+            System.out.println(s + ":" + jsonObject.get(s));
+        }
     }
 
     @Around("webLog()")

@@ -15,6 +15,7 @@ import com.manager.nacelle_rent.utils.RedisUtil;
 import com.xiaomi.xmpush.server.Constants;
 import com.xiaomi.xmpush.server.Message;
 import com.xiaomi.xmpush.server.Sender;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPReply;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -728,6 +729,8 @@ public class ProjectServiceImpl implements ProjectService{
                 for (Map<String, Object> map : map2) {
                     jsonObjects.add(new JSONObject(map));
                 }
+            case 4:///按照时间段获取
+
                 break;
         }
         return jsonObjects;
@@ -752,7 +755,15 @@ public class ProjectServiceImpl implements ProjectService{
             case 1:
                 List<Map<String, Object>> maps = projectMapper.getProjectPlaneGraphInfo(projectId);
                 for (Map<String, Object> map : maps) {
-                    jsonObjects.add(new JSONObject(map));
+                    JSONObject jsonObject = new JSONObject(map);
+                    String buildingId = (String) map.get("building_id");
+                    List<Map<String, Object>> maps1 = projectMapper.getPlaneGraphInfo(projectId, buildingId);
+                    String deviceList = "";
+                    for (Map<String, Object> map1 : maps1) {
+                        deviceList += (String) map1.get("device_id") + ",";
+                    }
+                    jsonObject.put("deviceList", deviceList);
+                    jsonObjects.add(jsonObject);
                 }
                 break;
             case 2:
@@ -763,6 +774,11 @@ public class ProjectServiceImpl implements ProjectService{
                     if (!deviceId.equals("A") && !deviceId.equals("B")) {
                         int projectState = projectMapper.getProjectDetail(projectId) == null ? 0 : Integer.parseInt(projectMapper.getProjectDetail(projectId).getProjectState());
                         int deviceState = electricStateMapper.getBoxLog(deviceId) == null ? 0 : electricStateMapper.getBoxLog(deviceId).getStorageState();
+                        String siteNo = electricStateMapper.getSiteNo(deviceId);
+                        if (siteNo == null || siteNo.equals("")) {
+                            siteNo = "未录入";
+                        }
+                        jsonObject.put("site_no", siteNo);
                         jsonObject.put("project_state", projectState);
                         jsonObject.put("basket_state", deviceState);
                         jsonObject.put("basket_id", deviceId);
@@ -1706,6 +1722,14 @@ public class ProjectServiceImpl implements ProjectService{
                         if(projectMapper.getPlaneGraphAB(projectId, locationId, buildingNum, locationId) != null) continue;
                         if(!projectMapper.uploadPlaneGraphInfo(projectId, buildingNum, deviceId, locationId, location)) return 0;
                     }else {
+                        List<String> deviceIdBefore = projectMapper.judgeDeviceLocationId(projectId, buildingNum, locationId);
+                        if (deviceIdBefore.size() != 0) {
+                            for (String deviceIdBe :deviceIdBefore) {
+                                if (!StringUtils.isBlank(deviceIdBe)) {
+                                    projectMapper.updateDeviceLocationId(projectId, buildingNum, "0", deviceIdBe);
+                                }
+                            }
+                        }
                         if(!projectMapper.updatePlaneGraphInfo(projectId, buildingNum, deviceId, locationId, location)) return 0;
                     }
                 }
@@ -1742,5 +1766,16 @@ public class ProjectServiceImpl implements ProjectService{
         jsonObject.put("deviceInfo", map);
         jsonObject.put("installTeamInfo", list1);
         return jsonObject;
+    }
+
+    @Override
+    public boolean deleteDevice(String deviceId) {
+        electricStateMapper.deleteWorkBox(deviceId);
+        List<String> list = projectDeviceMapper.getDevice(deviceId);
+        String projectId = list == null ? "" :list.get(0);
+        if (!projectId.equals("")) {
+            projectMapper.decreaseBox(projectId);
+        }
+        return true;
     }
 }

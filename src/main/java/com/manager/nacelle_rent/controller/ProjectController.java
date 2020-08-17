@@ -1797,4 +1797,19 @@ public class ProjectController {
         }
         return jsonObject;
     }
+    @ApiOperation(value = "获取项目吊篮历史绑定的信息" ,  notes="")
+    @PostMapping("/deleteDevice")
+    public JSONObject deleteDevice(HttpServletRequest request, @RequestParam String deviceId){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            boolean result = projectService.deleteDevice(deviceId);
+            jsonObject.put("result", result);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
 }

@@ -729,6 +729,7 @@ public class UserServiceImpl implements UserService {
                     jsonObject1.put(map.get("device_id") + "_userState", user);
                     if(device == null || device.isEmpty()) jsonObject1.put(map.get("device_id") + "_deviceState", 0);
                     else jsonObject1.put(map.get("device_id") + "_deviceState", device.size() == 4 ? 1 : 0);
+                    if (electricStateMapper.getBoxLog((String) map.get("device_id")) == null) continue;
                     jsonObject1.put(map.get("device_id") + "_state", electricStateMapper.getBoxLog((String) map.get("device_id")).getStorageState());
                     jsonObject1.put(map.get("device_id") + "_flag",  (Integer) userMapper.getDeviceInstallInfoByDeviceId(projectId, (String) map.get("device_id")).get("flag"));
                     jsonObject1.put(map.get("device_id") + "_siteNo", electricStateMapper.getSiteNo((String) map.get("device_id")));

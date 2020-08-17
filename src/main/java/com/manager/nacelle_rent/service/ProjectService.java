@@ -36,6 +36,7 @@ public interface ProjectService {
     String getConfigurationList(String projectId);
     boolean beginWork(String projectId, String userId, String boxId);
     boolean endWork(String projectId,String userId, String boxId);
+    boolean deleteDevice(String deviceId);
     int storageControl(String projectId, String deviceId, String managerId,String image, int storageState);
     int installApply(String projectId, int picNum, String managerId);
     int installCheck(String projectId, String deviceId, String managerId, String dealerId, String description, int check);

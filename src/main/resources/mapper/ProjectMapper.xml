@@ -172,6 +172,12 @@
         FROM alarm_history limit #{page},10
     </select>
 
+    <select id="getAlarmInfoByTime" resultType="java.util.HashMap">
+        SELECT *
+        FROM alarm_history
+        WHERE alarm_type = #{alarmType} limit #{page},10
+    </select>
+
     <select id="getAlarmInfoByType" resultType="java.util.HashMap">
         SELECT *
         FROM alarm_history
@@ -199,7 +205,7 @@
     <select id="getPlaneGraphInfo" resultType="java.util.HashMap">
         SELECT *
         FROM project_device
-        WHERE project_id = #{projectId} AND building_id = #{buildingNum}
+        WHERE project_id = #{projectId} AND building_id = #{buildingNum} AND flag = 1
     </select>
 
     <select id="getProjectPlaneGraphInfo" resultType="java.util.HashMap">
@@ -417,6 +423,18 @@
         INSERT INTO project_device(project_id, device_id, building_id, location_id, start_time, location)
         VALUES(#{projectId}, #{deviceId}, #{buildingId}, #{locationId}, current_timestamp, #{location})
     </insert>
+
+    <update id="updateDeviceLocationId">
+        UPDATE project_device
+        SET location_id = #{locationId}, location = ''
+        WHERE project_id = #{projectId} AND device_id = #{deviceId} AND building_id = #{buildingId}
+    </update>
+
+    <select id="judgeDeviceLocationId" parameterType="String" resultType="String">
+        SELECT device_id
+        FROM project_device
+        WHERE project_id = #{projectId} AND building_id = #{buildingId} AND location_id = #{locationId}
+    </select>
 
     <select id="getPlaneGraphAB" parameterType="String" resultType="java.util.HashMap">
         SELECT *

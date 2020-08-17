@@ -22,6 +22,7 @@ public interface ProjectMapper {
     List<Map<String, Object>> getAlarmInfoAll(int page);
     List<Map<String, Object>> getAlarmInfoByDeviceId(@Param("deviceId") String deviceId, @Param("page") int page);
     List<Map<String, Object>> getAlarmInfoByType(@Param("alarmType") String alarmType, @Param("page") int page);
+    List<Map<String, Object>> getAlarmInfoByTime(@Param("alarmType") String alarmType, @Param("startTime") String startTime, @Param("endTime") String endTime);
     List<Map<String, Object>> getAlarmInfoByProjectId(@Param("projectId") String projectId, @Param("page") int page);
     List<Map<String, Object>> getElectricBoxStopByProjectId(@Param("projectId") String projectId);
     List<Map<String, Object>> getPlaneGraphInfo(@Param("projectId") String projectId, @Param("buildingNum") String buildingNum);
@@ -37,6 +38,8 @@ public interface ProjectMapper {
     String searchCompany(@Param("projectId") String projectId);
 //    List<Project> getProjectId(String userId);
     Project getProjectIdByAdmin(String userId);
+    List<String> judgeDeviceLocationId(@Param("projectId") String projectId, @Param("buildingId") String buildingId, @Param("locationId") String locationId);
+    void updateDeviceLocationId(@Param("projectId") String projectId, @Param("buildingId") String buildingId, @Param("locationId") String locationId, @Param("deviceId") String deviceId);
     boolean increaseBox(@Param("projectId") String projectId);
     boolean decreaseBox(@Param("projectId") String projectId);
     boolean increaseWorker(@Param("projectId") String projectId);
