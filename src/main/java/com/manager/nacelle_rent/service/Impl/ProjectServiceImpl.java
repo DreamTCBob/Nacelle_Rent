@@ -702,36 +702,12 @@ public class ProjectServiceImpl implements ProjectService{
         return jsonObject;
     }
     @Override
-    public List<JSONObject> getAlarmInfo(int type, String value, int page){
+    public List<JSONObject> getAlarmInfo(Integer alarmType, String startTime, String endTime, String projectId, String deviceId, int page){
         List<JSONObject> jsonObjects = new ArrayList<>();
         int pageNumM = (page - 1) * 10;
-        switch (type) {
-            case 0:///全部获取
-                List<Map<String, Object>> mapAll = projectMapper.getAlarmInfoAll(pageNumM);
-                for (Map<String, Object> map : mapAll) {
-                    jsonObjects.add(new JSONObject(map));
-                }
-                break;
-            case 1:///按照吊篮号获取
-                List<Map<String, Object>> maps = projectMapper.getAlarmInfoByDeviceId(value, pageNumM);
-                for (Map<String, Object> map : maps) {
-                    jsonObjects.add(new JSONObject(map));
-                }
-                break;
-            case 2:///按照项目号获取
-                List<Map<String, Object>> map1 = projectMapper.getAlarmInfoByProjectId(value, pageNumM);
-                for (Map<String, Object> map : map1) {
-                    jsonObjects.add(new JSONObject(map));
-                }
-                break;
-            case 3:///按照报警类型获取
-                List<Map<String, Object>> map2 = projectMapper.getAlarmInfoByType(value, pageNumM);
-                for (Map<String, Object> map : map2) {
-                    jsonObjects.add(new JSONObject(map));
-                }
-            case 4:///按照时间段获取
-
-                break;
+        List<Map<String, Object>> mapAll = projectMapper.getAlarmInfo(alarmType, startTime, endTime, projectId, deviceId, pageNumM);
+        for (Map<String, Object> map : mapAll) {
+            jsonObjects.add(new JSONObject(map));
         }
         return jsonObjects;
     }
@@ -760,7 +736,10 @@ public class ProjectServiceImpl implements ProjectService{
                     List<Map<String, Object>> maps1 = projectMapper.getPlaneGraphInfo(projectId, buildingId);
                     String deviceList = "";
                     for (Map<String, Object> map1 : maps1) {
-                        deviceList += (String) map1.get("device_id") + ",";
+                        String device = (String) map1.get("device_id");
+                        if (!device.equals("A") && !device.equals("B")) {
+                            deviceList += device + ",";
+                        }
                     }
                     jsonObject.put("deviceList", deviceList);
                     jsonObjects.add(jsonObject);

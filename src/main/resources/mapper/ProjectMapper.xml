@@ -167,6 +167,26 @@
         FROM project_info
     </select>
 
+    <select id="getAlarmInfo" resultType="java.util.HashMap">
+        SELECT *
+        FROM alarm_history
+        <where>
+            <if test = "alarmType != null" >
+                AND alarm_type = #{alarmType}
+            </if>
+            <if test = "startTime != null and endTime != null">
+                AND time > #{startTime} and time &lt; #{endTime}
+            </if>
+            <if test = "projectId != null" >
+                AND project_id = #{projectId}
+            </if>
+            <if test = "deviceId != null" >
+                AND device_id = #{deviceId}
+            </if>
+        </where>
+        limit #{page},10
+    </select>
+
     <select id="getAlarmInfoAll" resultType="java.util.HashMap">
         SELECT *
         FROM alarm_history limit #{page},10
@@ -175,7 +195,7 @@
     <select id="getAlarmInfoByTime" resultType="java.util.HashMap">
         SELECT *
         FROM alarm_history
-        WHERE alarm_type = #{alarmType} limit #{page},10
+        WHERE time > #{startTime} and time &lt; #{endTime} limit #{page},10
     </select>
 
     <select id="getAlarmInfoByType" resultType="java.util.HashMap">

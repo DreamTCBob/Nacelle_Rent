@@ -17,7 +17,7 @@ public interface ProjectService {
     List<JSONObject> getProjectList2(int flag);
     JSONObject getAllProjectByAdmin(String userId);
     List<JSONObject> getStoreList(int flag);
-    List<JSONObject> getAlarmInfo(int type, String value, int page);
+    List<JSONObject> getAlarmInfo(Integer alarmType, String startTime, String endTime, String projectId, String deviceId, int page);
     List<JSONObject> getElectricBoxStop(int type, String value);
     List<JSONObject> getPlaneGraphInfo(String projectId, String buildingNum, int type);
     List<User> getUserList(String projectId);

@@ -1505,13 +1505,16 @@ public class ProjectController {
 
     @ApiOperation(value = "获取报警记录" ,  notes="")
     @GetMapping("/getAlarmInfo")
-    public JSONObject getAlarmInfo(HttpServletRequest request, @RequestParam int type, @RequestParam String value, @RequestParam int page){
+    public JSONObject getAlarmInfo(HttpServletRequest request, @RequestParam(required = false) Integer alarmType,
+                                   @RequestParam(required = false) String startTime, @RequestParam(required = false) String endTime,
+                                   @RequestParam(required = false) String projectId, @RequestParam(required = false) String deviceId,
+                                   @RequestParam(required = false) int page){
         JSONObject jsonObject = new JSONObject();
         String password = request.getHeader("Authorization");
         int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
             jsonObject.put("isLogin",true);
-            jsonObject.put("alarmInfo", projectService.getAlarmInfo(type, value, page));
+            jsonObject.put("alarmInfo", projectService.getAlarmInfo(alarmType, startTime, endTime, projectId, deviceId, page));
         }else{
             jsonObject.put("isLogin",false);
         }
