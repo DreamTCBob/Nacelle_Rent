@@ -80,6 +80,7 @@ public class ProjectServiceImpl implements ProjectService{
     private String MY_PACKAGE_NAME;
 
     private String[] projectStateList = {"草稿","待成立项目部","吊篮安装验收","进行中","已结束","安监证书验收","清单待配置","清单待审核"};
+    private String projectId;
 
     @Override
     public List<JSONObject> getProjectList(int flag){
@@ -1744,6 +1745,40 @@ public class ProjectServiceImpl implements ProjectService{
         }
         jsonObject.put("deviceInfo", map);
         jsonObject.put("installTeamInfo", list1);
+        return jsonObject;
+    }
+
+    @Override
+    public JSONObject getDeviceAlarmDetail(String deviceId, String startTime, String endTime) {
+        JSONObject jsonObject = new JSONObject();
+        String projectId = projectDeviceMapper.getDevice(deviceId).get(0);
+        Project project = projectMapper.getProjectDetail(projectId);
+        if (project == null) {
+            return null;
+        }
+
+        String projectName = project.getProjectName();
+        jsonObject.put("projectName", projectName);
+
+        String rentAdmin = project.getAdminRentId();
+        String areaAdmin = project.getAdminAreaId();
+        String projectAdmin = project.getAdminProjectId();
+
+        User rentUser = userMapper.getUserInfo(rentAdmin);
+        jsonObject.put("rentUser", rentUser);
+        User areaUser = userMapper.getUserInfo(areaAdmin);
+        jsonObject.put("areaUser", areaUser);
+        User projectUser = userMapper.getUserInfo(projectAdmin);
+        jsonObject.put("projectUser", projectUser);
+
+        String siteNo = electricStateMapper.getSiteNo(deviceId);
+        jsonObject.put("siteNo", siteNo);
+
+        int alarmCountAll = projectMapper.getAlarmCountAllByDeviceId(deviceId);
+        int alarmCountMonth = projectMapper.getAlarmCountMonthByDeviceId(deviceId, startTime, endTime);
+        jsonObject.put("alarmCountAll", alarmCountAll);
+        jsonObject.put("alarmCountMonth", alarmCountMonth);
+
         return jsonObject;
     }
 

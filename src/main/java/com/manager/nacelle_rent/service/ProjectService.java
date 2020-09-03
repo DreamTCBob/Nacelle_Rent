@@ -68,5 +68,6 @@ public interface ProjectService {
     JSONObject getWorker(int type, String deviceId);
     JSONObject getSiteNo(String deviceId);
     JSONObject getInstallInfo(String deviceId);
+    JSONObject getDeviceAlarmDetail(String deviceId, String startTime, String endTime);
     int storageIn(String projectId, String deviceId);
 }

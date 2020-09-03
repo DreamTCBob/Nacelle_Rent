@@ -216,6 +216,18 @@
         WHERE project_id = #{projectId} limit #{page},10
     </select>
 
+    <select id="getAlarmCountAllByDeviceId" resultType="int">
+        SELECT COUNT(*)
+        FROM alarm_history
+        WHERE device_id = #{deviceId}
+    </select>
+
+    <select id="getAlarmCountMonthByDeviceId" resultType="int">
+        SELECT COUNT(*)
+        FROM alarm_history
+        WHERE device_id = #{deviceId} AND time > #{startTime} AND time &lt; #{endTime}
+    </select>
+
     <select id="getElectricBoxStopByProjectId" resultType="java.util.HashMap">
         SELECT *
         FROM electricbox_stop

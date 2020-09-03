@@ -12,6 +12,8 @@ import java.util.Map;
 public interface ProjectMapper {
     int sumOfProject();
     int getConfigurationList(@Param("projectId") String projectId);
+    int getAlarmCountAllByDeviceId(@Param("deviceId") String deviceId);
+    int getAlarmCountMonthByDeviceId(@Param("deviceId") String deviceId, @Param("startTime") String startTime, @Param("endTime") String endTime);
     List<Project> getProjectList(int flag);
     List<Project> getProjectListByRegion(@Param("regionKey") String regionKey, @Param("pageNum") int pageNum);
     List<Project> getProjectListByRegionAll(@Param("regionKey") String regionKey);
