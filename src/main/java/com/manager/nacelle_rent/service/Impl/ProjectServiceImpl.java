@@ -708,8 +708,20 @@ public class ProjectServiceImpl implements ProjectService{
         int pageNumM = (page - 1) * 10;
         List<Map<String, Object>> mapAll = projectMapper.getAlarmInfo(alarmType, startTime, endTime, projectId, deviceId, pageNumM);
         for (Map<String, Object> map : mapAll) {
-            JSONObject jsonObject = new JSONObject();
-            jsonObjects.add(new JSONObject(map));
+            JSONObject jsonObject = new JSONObject(map);
+            String device = jsonObject.getString("device_id");
+            if (device == null || device.equals("")) {
+                continue;
+            }
+            String siteNo = electricStateMapper.getSiteNo(device);
+            jsonObject.put("siteNo", siteNo);
+            String project = jsonObject.getString("project_id");
+            if (project == null || project.equals("")) {
+                continue;
+            }
+            String projectName = projectMapper.getProjectName(project);
+            jsonObject.put("projectName", projectName);
+            jsonObjects.add(jsonObject);
         }
         return jsonObjects;
     }

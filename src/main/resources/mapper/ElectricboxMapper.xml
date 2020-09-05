@@ -13,6 +13,9 @@
         <result property="altitude" column="altitude" />
         <result property="timestamp" column="timestamp" />
         <result property="weight" column="weight" />
+        <result property="csq" column="csq"/>
+        <result property="bketStat" column="bket_stat"/>
+        <result property="productKey" column="product_key"/>
     </resultMap>
     <insert id="updateElectricBoxConfigByHoist" parameterType="String">
         INSERT INTO electricbox_config(device_id,hoist_id)
