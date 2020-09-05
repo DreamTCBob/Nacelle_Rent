@@ -708,6 +708,7 @@ public class ProjectServiceImpl implements ProjectService{
         int pageNumM = (page - 1) * 10;
         List<Map<String, Object>> mapAll = projectMapper.getAlarmInfo(alarmType, startTime, endTime, projectId, deviceId, pageNumM);
         for (Map<String, Object> map : mapAll) {
+            JSONObject jsonObject = new JSONObject();
             jsonObjects.add(new JSONObject(map));
         }
         return jsonObjects;

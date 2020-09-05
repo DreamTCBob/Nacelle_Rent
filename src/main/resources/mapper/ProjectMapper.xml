@@ -184,6 +184,7 @@
                 AND device_id = #{deviceId}
             </if>
         </where>
+        order by id desc
         limit #{page},10
     </select>
 
