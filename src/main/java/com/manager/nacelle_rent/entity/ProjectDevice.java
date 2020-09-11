@@ -2,7 +2,7 @@ package com.manager.nacelle_rent.entity;
 
 import com.manager.nacelle_rent.utils.PageQueryUtil;
 
-public class ProjectDevice {
+public class ProjectDevice extends PageQueryUtil{
     private int id;
     private int inWork;
     private String projectId;
@@ -10,9 +10,6 @@ public class ProjectDevice {
     private String deviceId;
     private String startTime;
     private String endTime;
-    private int pageSize;
-    private int pageIndex;
-    private int total;
 
     public int getId() {
         return id;
@@ -68,29 +65,5 @@ public class ProjectDevice {
 
     public void setEndTime(String endTime) {
         this.endTime = endTime;
-    }
-
-    public int getPageSize() {
-        return pageSize;
-    }
-
-    public void setPageSize(int pageSize) {
-        this.pageSize = pageSize;
-    }
-
-    public int getPageIndex() {
-        return pageIndex;
-    }
-
-    public void setPageIndex(int pageIndex) {
-        this.pageIndex = pageIndex;
-    }
-
-    public int getTotal() {
-        return total;
-    }
-
-    public void setTotal(int total) {
-        this.total = total;
     }
 }

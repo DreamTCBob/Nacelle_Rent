@@ -4,6 +4,7 @@ public class PageQueryUtil {
     private Integer pageSize = 5;
     private Integer pageIndex = 1;
     private Integer offset = 0;
+    private Integer total;
 
     public Integer getPageSize() {
         return pageSize;
@@ -33,5 +34,13 @@ public class PageQueryUtil {
 
     public void setOffset(Integer offset) {
         this.offset = offset;
+    }
+
+    public Integer getTotal() {
+        return total;
+    }
+
+    public void setTotal(Integer total) {
+        this.total = total;
     }
 }
