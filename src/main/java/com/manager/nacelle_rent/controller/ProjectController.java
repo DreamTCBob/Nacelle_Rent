@@ -10,6 +10,7 @@ import com.manager.nacelle_rent.utils.RedisUtil;
 import com.manager.nacelle_rent.utils.UserCheckUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -1508,13 +1509,18 @@ public class ProjectController {
     public JSONObject getAlarmInfo(HttpServletRequest request, @RequestParam(required = false) Integer alarmType,
                                    @RequestParam(required = false) String startTime, @RequestParam(required = false) String endTime,
                                    @RequestParam(required = false) String projectId, @RequestParam(required = false) String deviceId,
-                                   @RequestParam(required = false) int page){
+                                   @RequestParam(required = false) Integer pageSize, @RequestParam(required = true) Integer pageIndex){
         JSONObject jsonObject = new JSONObject();
         String password = request.getHeader("Authorization");
         int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
         if(flag == 1){
             jsonObject.put("isLogin",true);
-            jsonObject.put("alarmInfo", projectService.getAlarmInfo(alarmType, startTime, endTime, projectId, deviceId, page));
+            try {
+                jsonObject.put("alarmInfo", projectService.getAlarmInfo(alarmType, startTime, endTime, projectId, deviceId, pageSize, pageIndex));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
         }else{
             jsonObject.put("isLogin",false);
         }

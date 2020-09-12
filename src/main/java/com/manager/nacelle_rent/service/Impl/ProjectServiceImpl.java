@@ -11,6 +11,7 @@ import com.manager.nacelle_rent.service.RedisService;
 import com.manager.nacelle_rent.service.UserService;
 import com.manager.nacelle_rent.service.WorkTimeLogService;
 import com.manager.nacelle_rent.utils.DateUtil;
+import com.manager.nacelle_rent.utils.PageQueryUtil;
 import com.manager.nacelle_rent.utils.RedisUtil;
 import com.xiaomi.xmpush.server.Constants;
 import com.xiaomi.xmpush.server.Message;
@@ -703,10 +704,14 @@ public class ProjectServiceImpl implements ProjectService{
         return jsonObject;
     }
     @Override
-    public List<JSONObject> getAlarmInfo(Integer alarmType, String startTime, String endTime, String projectId, String deviceId, int page){
+    public List<JSONObject> getAlarmInfo(Integer alarmType, String startTime, String endTime, String projectId, String deviceId, Integer pageSize, Integer pageIndex){
         List<JSONObject> jsonObjects = new ArrayList<>();
-        int pageNumM = (page - 1) * 10;
-        List<Map<String, Object>> mapAll = projectMapper.getAlarmInfo(alarmType, startTime, endTime, projectId, deviceId, pageNumM);
+        PageQueryUtil pageQueryUtil = new PageQueryUtil();
+        pageQueryUtil.setPageIndex(pageIndex);
+        pageQueryUtil.setPageSize(pageSize);
+        List<Map<String, Object>> mapAll = projectMapper.getAlarmInfo(alarmType, startTime, endTime, projectId, deviceId, pageQueryUtil.getPageSize(), pageQueryUtil.getOffset());
+        int sum = projectMapper.getSumOfAlarmInfo(alarmType, startTime, endTime, projectId, deviceId);
+        pageQueryUtil.setTotal(sum);
         for (Map<String, Object> map : mapAll) {
             JSONObject jsonObject = new JSONObject(map);
             String device = jsonObject.getString("device_id");
@@ -721,6 +726,7 @@ public class ProjectServiceImpl implements ProjectService{
             }
             String projectName = projectMapper.getProjectName(project);
             jsonObject.put("projectName", projectName);
+            jsonObject.put("pageInfo", pageQueryUtil);
             jsonObjects.add(jsonObject);
         }
         return jsonObjects;

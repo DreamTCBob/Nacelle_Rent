@@ -11,7 +11,7 @@ public class PageQueryUtil {
     }
 
     public void setPageSize(Integer pageSize) {
-        this.pageSize = pageSize;
+        this.pageSize = pageSize == null ? this.pageSize : pageSize;
         if (this.pageIndex != null) {
             this.offset = this.pageSize * (this.pageIndex - 1);
         }

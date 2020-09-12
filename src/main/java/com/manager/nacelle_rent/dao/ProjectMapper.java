@@ -11,6 +11,9 @@ import java.util.Map;
 @Mapper
 public interface ProjectMapper {
     int sumOfProject();
+    int getSumOfAlarmInfo(@Param("alarmType") Integer alarmType, @Param("startTime") String startTime,
+                          @Param("endTime") String endTime, @Param("projectId") String projectId,
+                          @Param("deviceId") String deviceId);
     int getConfigurationList(@Param("projectId") String projectId);
     int getAlarmCountAllByDeviceId(@Param("deviceId") String deviceId);
     int getAlarmCountMonthByDeviceId(@Param("deviceId") String deviceId, @Param("startTime") String startTime, @Param("endTime") String endTime);
@@ -21,14 +24,9 @@ public interface ProjectMapper {
     List<Project> getProjectListAll();
     List<Project> getAllProjectByAdmin(String adminAreaId);
     List<ProjectSupInfo> getProjectSupInfo(@Param("projectId") String projectId);
-    List<Map<String, Object>> getAlarmInfoAll(int page);
-    List<Map<String, Object>> getAlarmInfoByDeviceId(@Param("deviceId") String deviceId, @Param("page") int page);
-    List<Map<String, Object>> getAlarmInfoByType(@Param("alarmType") String alarmType, @Param("page") int page);
-    List<Map<String, Object>> getAlarmInfoByTime(@Param("startTime") String startTime, @Param("endTime") String endTime, @Param("page") int page);
-    List<Map<String, Object>> getAlarmInfoByProjectId(@Param("projectId") String projectId, @Param("page") int page);
     List<Map<String, Object>> getAlarmInfo(@Param("alarmType") Integer alarmType, @Param("startTime") String startTime,
                                            @Param("endTime") String endTime, @Param("projectId") String projectId,
-                                           @Param("deviceId") String deviceId, @Param("page") int page);
+                                           @Param("deviceId") String deviceId, @Param("pageSize") Integer pageSize, @Param("offset") Integer offset);
     List<Map<String, Object>> getElectricBoxStopByProjectId(@Param("projectId") String projectId);
     List<Map<String, Object>> getPlaneGraphInfo(@Param("projectId") String projectId, @Param("buildingNum") String buildingNum);
     List<Map<String, Object>> getProjectPlaneGraphInfo(@Param("projectId") String projectId);
