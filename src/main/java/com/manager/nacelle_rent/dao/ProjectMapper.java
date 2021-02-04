@@ -14,6 +14,17 @@ public interface ProjectMapper {
     int getSumOfAlarmInfo(@Param("alarmType") Integer alarmType, @Param("startTime") String startTime,
                           @Param("endTime") String endTime, @Param("projectId") String projectId,
                           @Param("deviceId") String deviceId);
+    Integer getWorkTimeOneDay(@Param("date") String date, @Param("userId") String userId, @Param("projectId") String projectId);
+    Integer getWorkTimeOneWorker(@Param("date") String date, @Param("projectId") String projectId,
+                                 @Param("deviceId") String deviceId, @Param("siteNo") String siteNo);
+    Integer getNacelleWorkTimeOnDay(@Param("date") String date, @Param("deviceId") String deviceId,
+                                    @Param("siteNo") String siteNo, @Param("projectId") String projectId);
+    Integer getWorkTimeAll(@Param("startTime") String startTime, @Param("endTime") String endTime,
+                           @Param("userId") String userId, @Param("projectId") String projectId);
+    Integer getNacelleWorkTimeAll(@Param("startTime") String startTime, @Param("endTime") String endTime,
+                           @Param("userId") String deviceId, @Param("siteNo") String siteNo, @Param("projectId") String projectId);
+    Integer getDeviceWorkTime(@Param("startTime") String startTime, @Param("endTime") String endTime,
+                                  @Param("userId") String deviceId, @Param("projectId") String projectId);
     int getConfigurationList(@Param("projectId") String projectId);
     int getAlarmCountAllByDeviceId(@Param("deviceId") String deviceId);
     int getAlarmCountMonthByDeviceId(@Param("deviceId") String deviceId, @Param("startTime") String startTime, @Param("endTime") String endTime);
@@ -34,7 +45,19 @@ public interface ProjectMapper {
                                               @Param("buildingId") String buildingId, @Param("locationId") String locationId);
     List<Map<String, Object>> getProjectPlaneGraphOne(@Param("projectId") String projectId ,
                                               @Param("buildingId") String buildingId);
+    List<Map<String, Object>> getWorkerOneDayInfo(@Param("date") String date, @Param("userId") String userId, @Param("projectId") String projectId);
+    List<Map<String, Object>> getNacelleWorkOneDayInfo(@Param("date") String date, @Param("deviceId") String deviceId,
+                                                       @Param("siteNo") String siteNo, @Param("projectId") String projectId);
+    List<Map<String, Object>> getNacelleWorkerDetail(@Param("projectId") String projectId, @Param("deviceId") String deviceId, @Param("siteNo") String siteNo,
+                                                        @Param("startTime") String startTime, @Param("endTime") String endTime);
+    List<Map<String, Object>> getWorkerWorkInfo(@Param("startTime") String startTime, @Param("endTime") String endTime,
+                                                @Param("userId") String userId, @Param("projectId") String projectId);
+    List<Map<String, Object>> getNacelleWorkLogAll(@Param("startTime") String startTime, @Param("endTime") String endTime,
+                                                @Param("deviceId") String deviceId, @Param("siteNo") String siteNo, @Param("projectId") String projectId);
     List<String> getProjectByVague(@Param("subString") String subString);
+    List<String> getDevice(@Param("subString") String subString);
+    List<String> getSiteNoList(@Param("deviceId") String deviceId, @Param("projectId") String projectId);
+    List<String> getDeviceWorkList(@Param("projectId") String projectId, @Param("startTime") String startTime, @Param("endTime") String endTime);
     Project getProjectDetail(String projectId);
     String getProjectName(String projectId);
     String checkProjectId(String projectId);
@@ -42,6 +65,7 @@ public interface ProjectMapper {
 //    List<Project> getProjectId(String userId);
     Project getProjectIdByAdmin(String userId);
     List<String> judgeDeviceLocationId(@Param("projectId") String projectId, @Param("buildingId") String buildingId, @Param("locationId") String locationId);
+    List<String> getWorkersFromWorkLog(@Param("projectId") String projectId, @Param("startTime") String startTime, @Param("endTime") String endTime);
     void updateDeviceLocationId(@Param("projectId") String projectId, @Param("buildingId") String buildingId, @Param("locationId") String locationId, @Param("deviceId") String deviceId);
     boolean increaseBox(@Param("projectId") String projectId);
     boolean decreaseBox(@Param("projectId") String projectId);
@@ -73,6 +97,8 @@ public interface ProjectMapper {
     void createProjectSupInfo(ProjectSupInfo projectSupInfo);
     void deleteProjectPlaneGraphOne(@Param("projectId") String projectId ,
                                     @Param("buildingId") String buildingId);
+    void deletePlaneGraphByBuildingInfo(@Param("projectId") String projectId, @Param("buildingId") String buildingId);
+    void deletePlaneGraphOne(@Param("projectId") String projectId, @Param("deviceId") String deviceId);
     void updatePerfectState(@Param("projectId") String projectId, @Param("perfectState") int perfectState);
     void updatePlaneState(@Param("projectId") String projectId, @Param("planeState") int planeState);
     void updateProjectContractUrl(@Param("projectId") String projectId, @Param("projectContractUrl") String projectContractUrl);

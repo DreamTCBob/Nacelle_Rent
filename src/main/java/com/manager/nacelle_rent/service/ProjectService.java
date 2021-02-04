@@ -13,6 +13,8 @@ public interface ProjectService {
     List<JSONObject> getProjectList(int flag);
     List<Project> getProjectListByKey(String keyWord, int flag, int pageNum);
     List<Project> getProjectByVague(String subString);
+    List<String> getDevice(String subString);
+    List<String> getSiteNoList(String deviceId, String projectId);
     List<JSONObject> getProjectListAll();
     List<JSONObject> getProjectList2(int flag);
     JSONObject getAllProjectByAdmin(String userId);
@@ -35,6 +37,7 @@ public interface ProjectService {
     String handleConfigurationList(Map<String, String> list);
     String getConfigurationList(String projectId);
     boolean beginWork(String projectId, String userId, String boxId);
+    boolean judgeAndroidBeginWork(String projectId, String userId, String boxId);
     boolean endWork(String projectId,String userId, String boxId);
     boolean deleteDevice(String deviceId);
     int storageControl(String projectId, String deviceId, String managerId,String image, int storageState);
@@ -69,5 +72,9 @@ public interface ProjectService {
     JSONObject getSiteNo(String deviceId);
     JSONObject getInstallInfo(String deviceId);
     JSONObject getDeviceAlarmDetail(String deviceId, String startTime, String endTime);
+    JSONObject getSingleWorkerReport(String projectId, String userId, String startTime, String endTime, int type);
+    JSONObject getSingleNacelleReport(String projectId, String deviceId, String siteNo, String startTime, String endTime, int type);
+    JSONObject getWorkerUseNacelleReport(String projectId, String startTime, String endTime);
+    JSONObject getNacelleWorkEfficiency(String projectId, String startTime, String endTime, Integer standard, Integer days);
     int storageIn(String projectId, String deviceId);
 }

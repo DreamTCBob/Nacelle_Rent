@@ -10,11 +10,18 @@
         <result property="userId" column="user_id"/>
         <result property="timeWork" column="time_work"/>
         <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="siteNo" column="site_no"/>
     </resultMap>
 
     <insert id="createWorkTimeLog">
-        INSERT INTO work_time_log(user_id,project_id,device_id,time_work,start_time)
-        VALUES(#{userId},#{projectId},#{deviceId},#{timeWork},#{timeStamp})
+        INSERT INTO work_time_log(user_id,project_id,device_id,time_work,start_time, end_time, site_no)
+        VALUES(#{userId},#{projectId},#{deviceId},#{timeWork},#{timeStamp}, CURRENT_TIMESTAMP, #{siteNo})
+    </insert>
+
+    <insert id="createNacelleWorkTimeLog">
+        INSERT INTO nacelle_work_log(project_id,device_id,time_work,start_time, end_time, site_no)
+        VALUES(#{projectId},#{deviceId},#{timeWork},#{timeStamp}, CURRENT_TIMESTAMP, #{siteNo})
     </insert>
 
     <select id="getWorkerTime" resultMap="workTimeLogResultMap">

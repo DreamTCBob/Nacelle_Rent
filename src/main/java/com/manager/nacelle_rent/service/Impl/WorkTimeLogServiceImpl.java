@@ -20,8 +20,8 @@ public class WorkTimeLogServiceImpl implements WorkTimeLogService {
     @Autowired
     private ProjectMapper projectMapper;
     @Override
-    public void createWorkTimeLog(String userId, String projectId, String deviceId, long timeWork, Timestamp timeStamp){
-        workTimeLogMapper.createWorkTimeLog(userId, projectId, deviceId, timeWork,timeStamp);
+    public void createWorkTimeLog(String userId, String projectId, String deviceId, long timeWork, Timestamp timeStamp, String siteNo){
+        workTimeLogMapper.createWorkTimeLog(userId, projectId, deviceId, timeWork,timeStamp, siteNo);
     }
     @Override
     public List<WorkTimeLog> getWorkerTime(String userId){

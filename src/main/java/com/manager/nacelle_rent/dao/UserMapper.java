@@ -63,6 +63,7 @@ public interface UserMapper {
     //根据WEB返回结果处理注册审核
     void deleteUser(String[] multipleUserId);
     void updateRegisterState(String[] multipleUserId);
+    void updateWorkerRegisterState(String userId);
     void updatePassword(@Param("userId") String userId, @Param("newPassword") String newPassword);
     void updateUserPhone(@Param("userId") String userId, @Param("phone") String phone);
     void updateUserRole(@Param("userId") String userId, @Param("userRole") String userRole);
@@ -94,7 +95,7 @@ public interface UserMapper {
     Map<String, Object> getDeviceInstallInfo(@Param("projectId") String projectId, @Param("userId") String userId, @Param("deviceId") String deviceId);
     Map<String, Object> getDeviceInstallInfoByDeviceId(@Param("projectId") String projectId, @Param("deviceId") String deviceId);
     List<String> getProjectByInstaller(@Param("userId") String userId);
-
+    String getUserName(@Param("userId") String userId);
     String getCameraIdPart(@Param("deviceId") String deviceId);
     String getHoistIdPart(@Param("deviceId") String deviceId);
     String getSafeLockIdPart(@Param("deviceId") String deviceId);

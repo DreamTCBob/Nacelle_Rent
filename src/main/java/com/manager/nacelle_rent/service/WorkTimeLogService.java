@@ -7,6 +7,6 @@ import java.sql.Timestamp;
 import java.util.List;
 
 public interface WorkTimeLogService {
-    void createWorkTimeLog(String userId, String projectId, String deviceId, long timeWork, Timestamp timeStamp);
+    void createWorkTimeLog(String userId, String projectId, String deviceId, long timeWork, Timestamp timeStamp, String siteNo);
     List<WorkTimeLog> getWorkerTime(String userId);
 }

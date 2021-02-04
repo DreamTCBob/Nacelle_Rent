@@ -2,6 +2,8 @@ package com.manager.nacelle_rent.service.Impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.manager.nacelle_rent.dao.ElectricBoxMapper;
+import com.manager.nacelle_rent.dao.ElectricResMapper;
+import com.manager.nacelle_rent.dao.ElectricStateMapper;
 import com.manager.nacelle_rent.dao.UserMapper;
 import com.manager.nacelle_rent.entity.ElectricRes;
 import com.manager.nacelle_rent.entity.SimpleUser;
@@ -18,6 +20,10 @@ public class ElectricBoxServiceImpl implements ElectricBoxService {
     private UserMapper userMapper;
     @Autowired
     private ElectricBoxMapper electricBoxMapper;
+    @Autowired
+    private ElectricResMapper electricResMapper;
+    @Autowired
+    private ElectricStateMapper electricStateMapper;
 
     @Override
     public List<ElectricRes> serializeElectricRes(List<ElectricRes> list){
@@ -90,5 +96,21 @@ public class ElectricBoxServiceImpl implements ElectricBoxService {
                 else return 0;
         }
         return 0;
+    }
+
+    @Override
+    public List<JSONObject> getElectricResInfo(String deviceId, String userId) {
+        List<JSONObject> list = new ArrayList<>();
+        List<ElectricRes> electricResList = electricResMapper.getElectricResInfo(deviceId, userId);
+        for (ElectricRes electricRes : electricResList) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("electricRes", electricRes);
+            String siteNo = electricStateMapper.getSiteNo(electricRes.getDeviceId());
+            jsonObject.put("siteNo", siteNo);
+            String userName = userMapper.getUserName(electricRes.getProjectBuilders());
+            jsonObject.put("userName", userName);
+            list.add(jsonObject);
+        }
+        return list;
     }
 }

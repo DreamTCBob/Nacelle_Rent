@@ -40,6 +40,7 @@ public interface UserService {
     void sendMessageToAreaAdmin(String alias) throws Exception;
     void sendRepairMessage(String projectId, String deviceId, Timestamp startTime) throws Exception;
     List<JSONObject> getInstaller(String projectId, String userId, String deviceId);
+    List<JSONObject> getUserListByProjectId(String projectId);
     JSONObject getProjectByInstaller(String userId, String projectId, int type);
     JSONObject getProjectInstallInfoByProjectId(String projectId);
 }

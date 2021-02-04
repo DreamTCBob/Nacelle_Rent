@@ -75,12 +75,14 @@ public class LogAOP {
         {
             params.append(paramNames[i]).append("=").append(paramValues[i]).append("</br>");
         }
-        long costTime = System.currentTimeMillis() - totalMilliSeconds;
-        System.out.println("请求时间：" + df.format(new Date()) + "  请求耗时：" + costTime + "ms" + "  请求方法：" + methodName + "  请求参数: " + params.toString());
+        //long costTime = System.currentTimeMillis() - totalMilliSeconds;
+        //System.out.println("请求时间：" + df.format(new Date()) + "  请求耗时：" + costTime + "ms" + "  请求方法：" + methodName + "  请求参数: " + params.toString());
         try
         {
             // 执行controller方法
             result = joinPoint.proceed();
+            long costTime = System.currentTimeMillis() - totalMilliSeconds;
+            System.out.println("请求时间：" + df.format(new Date()) + "  请求耗时：" + costTime + "ms" + "  请求方法：" + methodName + "  请求参数: " + params.toString());
         }
         catch (Throwable throwable)
         {

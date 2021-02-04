@@ -8,6 +8,7 @@ import com.manager.nacelle_rent.enums.ElectricBoxStateEnum;
 import com.manager.nacelle_rent.enums.ProjectStateEnum;
 import com.manager.nacelle_rent.service.ProjectService;
 import com.manager.nacelle_rent.service.RedisService;
+import com.manager.nacelle_rent.utils.WorkerUtils;
 import com.manager.nacelle_rent.utils.mapUtils;
 import com.manager.nacelle_rent.entity.User;
 import com.manager.nacelle_rent.entity.Project;
@@ -211,6 +212,11 @@ public class UserServiceImpl implements UserService {
             user.setUserId(Integer.toString(nowId - 1));
             userMapper.registerUser(user);
             redisService.setUser(user);
+            if (WorkerUtils.roleMap.containsKey(user.getUserRole())) {
+                userMapper.updateWorkerRegisterState(user.getUserId());
+                user = userMapper.getUserInfo(user.getUserId());
+                redisService.setUser(user);
+            }
             return 1;  //成功写进数据库
         }catch (Exception ex){
             System.out.print(ex.toString());
@@ -243,7 +249,8 @@ public class UserServiceImpl implements UserService {
             for(String user : deleteUser1){
                 User userInfo  = userMapper.getUserInfo(user);
                 String projectId = projectWorkerMapper.getWorker(user).isEmpty() ? "" : projectWorkerMapper.getWorker(user).get(0);
-                if (userInfo.getUserRole().contains("orker") || userInfo.getUserRole().equals("coating_painter") || userInfo.getUserRole().equals("coating_realStone")){
+                if (userInfo.getUserRole().contains("orker") || userInfo.getUserRole().equals("coating_painter") ||
+                        userInfo.getUserRole().equals("coating_realStone") || mapUtils.roleMap.containsKey(userInfo.getUserRole())){
                     if(!projectId.equals("")) {
                         projectMapper.decreaseWorker(projectId);
                         projectWorkerMapper.deleteWorkerByUserId(user);
@@ -266,7 +273,8 @@ public class UserServiceImpl implements UserService {
             for(String user : deleteUser1){
                 User userInfo  = userMapper.getUserInfo(user);
                 String projectId = projectWorkerMapper.getWorker(user).isEmpty() ? "" : projectWorkerMapper.getWorker(user).get(0);
-                if (userInfo.getUserRole().contains("orker") || userInfo.getUserRole().equals("coating_painter") || userInfo.getUserRole().equals("coating_realStone")){
+                if (userInfo.getUserRole().contains("orker") || userInfo.getUserRole().equals("coating_painter") ||
+                        userInfo.getUserRole().equals("coating_realStone") || mapUtils.roleMap.containsKey(userInfo.getUserRole())){
                     if(!projectId.equals("")) {
                         projectMapper.decreaseWorker(projectId);
                         projectWorkerMapper.deleteWorkerByUserId(user);
@@ -794,5 +802,19 @@ public class UserServiceImpl implements UserService {
             user.setUserRole(mapUtils.roleMap.get(user.getUserRole()));
         }
         return list;
+    }
+
+    @Override
+    public List<JSONObject> getUserListByProjectId(String projectId) {
+        List<JSONObject> workers = new ArrayList<>();
+        List<String> workerList = projectWorkerMapper.getWorkerList(projectId);
+        for (String worker : workerList) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("userId", worker);
+            String workerName = userMapper.getUserName(worker);
+            jsonObject.put("userName", workerName);
+            workers.add(jsonObject);
+        }
+        return workers;
     }
 }

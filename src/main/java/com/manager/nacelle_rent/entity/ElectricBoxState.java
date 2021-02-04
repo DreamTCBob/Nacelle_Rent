@@ -1,6 +1,7 @@
 package com.manager.nacelle_rent.entity;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 public class ElectricBoxState {
     private int workingState;
@@ -11,6 +12,7 @@ public class ElectricBoxState {
     private String projectId;
     private String storeIn;
     private String siteNo;
+    private List<User> workers;
 
     public int getWorkingState() { return workingState; }
 
@@ -60,5 +62,13 @@ public class ElectricBoxState {
 
     public void setSiteNo(String siteNo) {
         this.siteNo = siteNo;
+    }
+
+    public List<User> getWorkers() {
+        return workers;
+    }
+
+    public void setWorkers(List<User> workers) {
+        this.workers = workers;
     }
 }

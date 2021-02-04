@@ -114,7 +114,7 @@
     <select id="getAllAccount" resultMap="userResultMap">
         SELECT user_id, user_name, user_phone, user_image, role_id
         FROM user_info
-        WHERE isChecked = true AND role_id IN ('rentAdmin', 'areaAdmin', 'inspector', 'worker_2', 'worker', 'worker_1', 'worker_3', 'InstallTeam', 'curtain_stoneWorker','curtain_electricWorker','curtain_glassWorker','curtain_glueWorker','coating_painter','coating_realStone','other_others','manager','govAdmin')
+        WHERE isChecked = true AND role_id IN ('curtain_glassPlate', 'rentAdmin', 'areaAdmin', 'inspector', 'worker_2', 'worker', 'worker_1', 'worker_3', 'InstallTeam', 'curtain_stoneWorker','curtain_electricWorker','curtain_glassWorker','curtain_glueWorker','coating_painter','coating_realStone','other_others','manager','govAdmin')
     </select>
 
     <select id="getAllWebAccount" resultMap="userResultMap">
@@ -144,6 +144,12 @@
         <foreach collection="array" item="item" open="(" separator="," close=")">
             #{item}
         </foreach>
+    </update>
+
+    <update id="updateWorkerRegisterState">
+        UPDATE user_info
+        SET isChecked = 1
+        WHERE user_id = #{userId}
     </update>
 
     <update id="updateQualifications">
@@ -284,6 +290,12 @@
         SELECT *
         FROM electricbox_config
         WHERE device_id = #{deviceId}
+    </select>
+
+    <select id="getUserName" resultType="String" parameterType="String">
+        SELECT user_name
+        FROM user_info
+        WHERE user_id = #{userId}
     </select>
 
     <select id="getCameraIdPart" resultType="String" parameterType="String">

@@ -15,5 +15,6 @@ public interface ElectricBoxMapper {
     boolean updateElectricBoxConfigByHoist(@Param("deviceId") String deviceId,@Param("hoistId") String hoistId);
     boolean updateElectricBoxConfigByCamera(@Param("deviceId") String deviceId,@Param("cameraId") String cameraId);
     boolean updateElectricBoxConfigBySafeLock(@Param("deviceId") String deviceId,@Param("safeLockId") String safeLockId);
+    Integer getSumOfDevice();
 
 }

@@ -186,6 +186,24 @@
         </where>
     </select>
 
+    <select id="getWorkTimeOneDay" resultType="int">
+        SELECT SUM(time_work)
+        FROM work_time_log
+        WHERE (datediff(start_time, #{date}) = 0) AND user_id = #{userId} AND project_id = #{projectId}
+    </select>
+
+    <select id="getWorkTimeOneWorker" resultType="int">
+        SELECT SUM(time_work)
+        FROM work_time_log
+        WHERE (datediff(start_time, #{date}) = 0) AND project_id = #{projectId} AND device_id = #{deviceId} AND site_no = #{siteNo}
+    </select>
+
+    <select id="getNacelleWorkTimeOnDay" resultType="int">
+        SELECT SUM(time_work)
+        FROM nacelle_work_log
+        WHERE (datediff(start_time, #{date}) = 0) AND device_id = #{deviceId} AND project_id = #{projectId} AND site_no = #{siteNo}
+    </select>
+
     <select id="getAlarmInfo" resultType="java.util.HashMap">
         SELECT *
         FROM alarm_history
@@ -217,6 +235,24 @@
         SELECT COUNT(*)
         FROM alarm_history
         WHERE device_id = #{deviceId} AND time > #{startTime} AND time &lt; #{endTime}
+    </select>
+
+    <select id="getWorkTimeAll" resultType="int">
+        SELECT SUM(time_work)
+        FROM work_time_log
+        WHERE user_id = #{userId} AND project_id = #{projectId} AND start_time > #{startTime} AND end_time &lt; #{endTime}
+    </select>
+
+    <select id="getNacelleWorkTimeAll" resultType="int">
+        SELECT SUM(time_work)
+        FROM nacelle_work_log
+        WHERE device_id = #{userId} AND site_no = #{siteNo} AND project_id = #{projectId} AND start_time > #{startTime} AND end_time &lt; #{endTime}
+    </select>
+
+    <select id="getDeviceWorkTime" resultType="int">
+        SELECT SUM(time_work)
+        FROM nacelle_work_log
+        WHERE device_id = #{userId} AND project_id = #{projectId} AND start_time > #{startTime} AND end_time &lt; #{endTime}
     </select>
 
     <select id="getElectricBoxStopByProjectId" resultType="java.util.HashMap">
@@ -393,6 +429,24 @@
         WHERE  INSTR(project_name,#{subString}) > 0 OR INSTR(region,#{subString}) > 0
     </select>
 
+    <select id="getSiteNoList" resultType="String" parameterType="String">
+        SELECT site_no
+        FROM nacelle_work_log
+        WHERE device_id = #{deviceId} AND project_id = #{projectId}
+    </select>
+
+    <select id="getDeviceWorkList" resultType="String" parameterType="String">
+        SELECT device_id
+        FROM nacelle_work_log
+        WHERE project_id = #{projectId} AND start_time > #{startTime} AND end_time &lt; #{endTime}
+    </select>
+
+    <select id="getDevice" resultType="String" parameterType="String">
+        SELECT device_id
+        FROM   electricbox_info
+        WHERE  INSTR(device_id,#{subString}) > 0
+    </select>
+
     <select id="getProjectListByRegion" resultMap="projectResultMap">
         SELECT *
         FROM   project_info
@@ -459,6 +513,12 @@
         WHERE project_id = #{projectId} AND building_id = #{buildingId} AND location_id = #{locationId}
     </select>
 
+    <select id="getWorkersFromWorkLog" parameterType="String" resultType="String">
+        SELECT user_id
+        FROM work_time_log
+        WHERE project_id = #{projectId} AND start_time > #{startTime} AND end_time &lt; #{endTime}
+    </select>
+
     <select id="getPlaneGraphAB" parameterType="String" resultType="java.util.HashMap">
         SELECT *
         FROM project_device
@@ -475,6 +535,18 @@
         DELETE FROM project_plane_graph
         WHERE project_id = #{projectId} AND building_id = #{buildingId}
     </delete>
+
+    <update id="deletePlaneGraphByBuildingInfo">
+        UPDATE project_device
+        SET location_id = '0', location = null, building_id = ''
+        WHERE project_id = #{projectId} AND building_id = #{buildingId} AND flag = 1
+    </update>
+
+    <update id="deletePlaneGraphOne">
+        UPDATE project_device
+        SET location_id = '0', location = null, building_id = ''
+        WHERE project_id = #{projectId} AND device_id = #{deviceId} AND flag = 1
+    </update>
 
     <insert id="uploadProjectPlaneGraphInfo">
         INSERT INTO project_plane_graph(project_id, building_id, location, time)
@@ -539,5 +611,40 @@
         INSERT INTO install_check(project_id, device_id, manager_id, dealer_id, description, record)
         VALUES(#{projectId}, #{deviceId}, #{managerId}, #{dealerId}, #{description}, #{record})
     </insert>
+
+    <select id="getWorkerOneDayInfo" parameterType="String" resultType="java.util.HashMap">
+        SELECT *
+        FROM work_time_log
+        WHERE (datediff(start_time, #{date}) = 0) AND user_id = #{userId} AND project_id = #{projectId}
+        ORDER BY start_time DESC
+    </select>
+
+    <select id="getNacelleWorkOneDayInfo" parameterType="String" resultType="java.util.HashMap">
+        SELECT *
+        FROM nacelle_work_log
+        WHERE (datediff(start_time, #{date}) = 0) AND device_id = #{deviceId} AND project_id = #{projectId} AND site_no = #{siteNo}
+        ORDER BY start_time
+    </select>
+
+    <select id="getNacelleWorkerDetail" parameterType="String" resultType="java.util.HashMap">
+        SELECT *
+        FROM work_time_log
+        WHERE device_id = #{deviceId} AND project_id = #{projectId} AND site_no = #{siteNo} AND start_time >= #{startTime} AND end_time &lt;= #{endTime}
+        ORDER BY start_time
+    </select>
+
+    <select id="getWorkerWorkInfo" parameterType="String" resultType="java.util.HashMap">
+        SELECT *
+        FROM work_time_log
+        WHERE user_id = #{userId} AND project_id = #{projectId} AND start_time > #{startTime} AND end_time &lt; #{endTime}
+        ORDER BY start_time DESC
+    </select>
+
+    <select id="getNacelleWorkLogAll" parameterType="String" resultType="java.util.HashMap">
+        SELECT *
+        FROM nacelle_work_log
+        WHERE device_id = #{deviceId} AND site_no = #{siteNo} AND project_id = #{projectId} AND start_time > #{startTime} AND end_time &lt; #{endTime}
+        ORDER BY start_time
+    </select>
 
 </mapper>

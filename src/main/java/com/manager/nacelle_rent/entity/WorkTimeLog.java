@@ -8,6 +8,8 @@ public class WorkTimeLog {
     private String userId;
     private long timeWork;
     private String startTime;
+    private String endTime;
+    private String siteNo;
 
     public String getStartTime() {
         return startTime;
@@ -63,5 +65,13 @@ public class WorkTimeLog {
 
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+
+    public String getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(String endTime) {
+        this.endTime = endTime;
     }
 }

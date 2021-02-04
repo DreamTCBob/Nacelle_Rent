@@ -11,5 +11,6 @@ public interface ElectricBoxService {
     int createElectricBoxConfig(String deviceId, String type, String number);
     int deleteElectricBoxConfig(String deviceId, String type);
     JSONObject getElectricBoxConfig(String deviceId, int type);
+    List<JSONObject> getElectricResInfo(String deviceId, String userId);
 
 }

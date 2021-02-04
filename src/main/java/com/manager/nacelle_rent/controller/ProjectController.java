@@ -51,6 +51,8 @@ public class ProjectController {
     private ConfigurationList configurationList;
     @Autowired
     private RedisService redisService;
+    @Autowired
+    private ElectricBoxMapper electricBoxMapper;
     @Resource
     private ProjectDeviceService projectDeviceService;
 
@@ -396,6 +398,13 @@ public class ProjectController {
 
                                 String adminName = userService.getUserInfo(project.getAdminAreaId()).getUserName();
                                 electricBoxState.setProjectId(adminName);
+                                electricBoxState.setSiteNo(electricStateMapper.getSiteNo(electricBoxState.getDeviceId()));
+                                List<User> users = new ArrayList<>();
+                                List<ElectricRes> electricResList = electricResMapper.getDevice(electricBoxState.getDeviceId());
+                                for (ElectricRes electricRes : electricResList) {
+                                    users.add(userMapper.getUserInfo(electricRes.getProjectBuilders()));
+                                }
+                                electricBoxState.setWorkers(users);
                                 jsonObject.put("Box" + i, electricBoxState);
                             }
                         }
@@ -456,6 +465,29 @@ public class ProjectController {
             }catch (Exception ex){
                 jsonObject.put("beginWork",false);
             }
+        }else{
+            jsonObject.put("isAllowed",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "判断安卓是否可以扫码开工" ,  notes="")
+    @PostMapping("/judgeAndroidBeginWork")
+    public JSONObject judgeAndroidBeginWork(HttpServletRequest request, @RequestParam String projectId, @RequestParam String userId, @RequestParam String boxId){
+        JSONObject jsonObject = new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1) {
+            try {
+                boolean result = projectService.judgeAndroidBeginWork(projectId,userId,boxId);
+                if(result) {
+                    jsonObject.put("judgeAndroidBeginWork",true);
+                }else
+                    jsonObject.put("judgeAndroidBeginWork", false);
+            }catch (Exception ex){
+                jsonObject.put("judgeAndroidBeginWork",false);
+            }
+            jsonObject.put("isAllowed",true);
         }else{
             jsonObject.put("isAllowed",false);
         }
@@ -970,6 +1002,9 @@ public class ProjectController {
 
         if(flag == 1){
             jsonObject.put("totalPreStopBasket", projectService.getStorageSum(1).get("usedSum"));
+            jsonObject.put("totalProjectNum", projectMapper.sumOfProject());
+            jsonObject.put("totalDeviceNum", electricStateMapper.sumOfElectricBox());
+            jsonObject.put("totalUserNum", userMapper.sumOfUser());
         } else{
             jsonObject.put("isAllowed",false);
         }
@@ -1364,7 +1399,16 @@ public class ProjectController {
                         for (int i = 0; i < basket.length; i++) {
                             if(basket[i].equals("A")||basket[i].equals("B")) continue;
                             if(electricStateMapper.getBoxLog(basket[i]).getStorageState() != 0) {
-                                jsonObject.put("storage" + i, electricStateMapper.getBoxLog(basket[i]));
+                                ElectricBoxState electricBoxState = electricStateMapper.getBoxLog(basket[i]);
+                                electricBoxState.setSiteNo(electricStateMapper.getSiteNo(electricBoxState.getDeviceId()));
+                                List<User> users = new ArrayList<>();
+                                List<ElectricRes> electricResList = electricResMapper.getDevice(electricBoxState.getDeviceId());
+                                for (ElectricRes electricRes : electricResList) {
+                                    users.add(userMapper.getUserInfo(electricRes.getProjectBuilders()));
+                                }
+                                electricBoxState.setWorkers(users);
+                                electricBoxState.setWorkingState(electricBoxMapper.getRealTimeDataById(basket[i]) != null ? electricBoxMapper.getRealTimeDataById(basket[i]).getBketStat() : 0);
+                                jsonObject.put("storage" + i, electricBoxState);
                                 basketList = basketList.replace(basket[i] + ",", "");
                             }
                         }
@@ -1832,6 +1876,171 @@ public class ProjectController {
             jsonObject.put("isLogin",true);
             JSONObject result = projectService.getDeviceAlarmDetail(deviceId, startTime, endTime);
             jsonObject.put("result", result);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "单个工人使用吊篮报表" ,  notes="")
+    @GetMapping("/getSingleWorkerReport")
+    public JSONObject getSingleWorkerReport(HttpServletRequest request,
+                                            @RequestParam String projectId, @RequestParam String userId,
+                                            @RequestParam String startTime, @RequestParam String endTime, int type){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            JSONObject result = projectService.getSingleWorkerReport(projectId, userId, startTime, endTime, type);
+            jsonObject.put("info", result);
+        }else{
+            jsonObject.put("isLogin",false);
+            jsonObject.put("result", null);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "工人操作吊篮统计报表" ,  notes="")
+    @GetMapping("/getWorkerUseNacelleReport")
+    public JSONObject getWorkerUseNacelleReport(HttpServletRequest request,
+                                            @RequestParam String projectId, @RequestParam String startTime,
+                                            @RequestParam String endTime){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            JSONObject result = projectService.getWorkerUseNacelleReport(projectId, startTime, endTime);
+            jsonObject.put("info", result);
+        }else{
+            jsonObject.put("isLogin",false);
+            jsonObject.put("result", null);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "单个工人使用吊篮报表" ,  notes="")
+    @GetMapping("/getSingleNacelleReport")
+    public JSONObject getSingleNacelleReport(HttpServletRequest request,
+                                            @RequestParam String projectId, @RequestParam String deviceId, @RequestParam String siteNo,
+                                            @RequestParam String startTime, @RequestParam String endTime, int type){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            JSONObject result = projectService.getSingleNacelleReport(projectId, deviceId, siteNo, startTime, endTime, type);
+            jsonObject.put("info", result);
+        }else{
+            jsonObject.put("isLogin",false);
+            jsonObject.put("result", null);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "吊篮工作效率统计表" ,  notes="")
+    @GetMapping("/getNacelleWorkEfficiency")
+    public JSONObject getNacelleWorkEfficiency(HttpServletRequest request,
+                                                @RequestParam String projectId, @RequestParam String startTime,
+                                                @RequestParam String endTime, @RequestParam(required = false) Integer standard, @RequestParam Integer days){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            JSONObject result = projectService.getNacelleWorkEfficiency(projectId, startTime, endTime, standard, days);
+            jsonObject.put("info", result);
+        }else{
+            jsonObject.put("isLogin",false);
+            jsonObject.put("result", null);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "模糊查找吊篮" ,  notes="")
+    @GetMapping("/getDevice")
+    public JSONObject getDevice(HttpServletRequest request, @RequestParam String subString){
+        JSONObject jsonObject = new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            List<String> list = projectService.getDevice(subString);
+            jsonObject.put("deviceList", list);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "获取现场编号列表" ,  notes="")
+    @GetMapping("/getSiteNoList")
+    public JSONObject getSiteNoList(HttpServletRequest request, @RequestParam String deviceId, @RequestParam String projectId){
+        JSONObject jsonObject = new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            List<String> list = projectService.getSiteNoList(deviceId, projectId);
+            jsonObject.put("siteNoList", list);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "删除吊篮位置信息" ,  notes="")
+    @PostMapping("/deletePlaneGraphInfo")
+    public JSONObject deletePlaneGraphInfo(HttpServletRequest request, @RequestParam String projectId, @RequestParam(required = false) String deviceId,
+                                           @RequestParam(required = false) String buildingId, @RequestParam int type){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            switch (type) {
+                case 1:
+                    try {
+                        projectMapper.deleteProjectPlaneGraphOne(projectId, buildingId);
+                        projectMapper.deletePlaneGraphByBuildingInfo(projectId, buildingId);
+                        jsonObject.put("result", "success");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        jsonObject.put("result", "fail");
+                    }
+                    break;
+                case 2:
+                    try {
+                        projectMapper.deletePlaneGraphOne(projectId, deviceId);
+                        jsonObject.put("result", "success");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        jsonObject.put("result", "fail");
+                    }
+                    break;
+            }
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "删除吊篮位置信息" ,  notes="")
+    @GetMapping("/getWorkerWorkInfo")
+    public JSONObject getWorkerWorkInfo(HttpServletRequest request, @RequestParam String userId){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            ElectricRes electricRes = electricResMapper.getElectricBoxState(userId);
+            if (electricRes != null) {
+                electricRes.setProjectName(projectMapper.getProjectName(electricRes.getProjectId()));
+                jsonObject.put("workInfo", electricRes);
+            } else {
+                jsonObject.put("workInfo", null);
+            }
         }else{
             jsonObject.put("isLogin",false);
         }

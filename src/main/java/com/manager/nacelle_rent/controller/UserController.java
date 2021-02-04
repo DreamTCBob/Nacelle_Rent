@@ -424,7 +424,8 @@ public class UserController {
                 Project project = null;
                 String projectId = "";
                 String projectName = "";
-                if(userInfo.getUserRole().contains("orker") || userInfo.getUserRole().equals("coating_painter") || userInfo.getUserRole().equals("coating_realStone"))
+                if(userInfo.getUserRole().contains("orker") || userInfo.getUserRole().equals("coating_painter") ||
+                        userInfo.getUserRole().equals("coating_realStone") || mapUtils.roleMap.containsKey(userInfo.getUserRole()))
                     projectId = projectWorkerMapper.getWorker(userId).size() == 0 ? "" : projectWorkerMapper.getWorker(userId).get(0);
                 else if(userInfo.getUserRole().equals("rentAdmin")) {
                     if(projectMapper.getProjectIdByAdmin(userId)!=null)
@@ -443,7 +444,8 @@ public class UserController {
 
                 if(project != null)
                     projectName = project.getProjectName();
-                if(userInfo.getUserRole().contains("orker") || userInfo.getUserRole().equals("coating_painter") || userInfo.getUserRole().equals("coating_realStone")) {///////如果是工人就返回状态
+                if(userInfo.getUserRole().contains("orker") || userInfo.getUserRole().equals("coating_painter") ||
+                        userInfo.getUserRole().equals("coating_realStone") || mapUtils.roleMap.containsKey(userInfo.getUserRole())) {///////如果是工人就返回状态
                     ElectricRes electricRes = electricResMapper.getElectricBoxState(userId);
                     if (electricRes != null)
                         jsonObject.put("userState", 1);///////1就是要离开，就是现在正在工作
@@ -784,6 +786,23 @@ public class UserController {
             jsonObject.put("result", result);
         }else{
             jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
+    @ApiOperation(value = "按照项目获取施工人员列表" ,  notes="")
+    @GetMapping("/getUserListByProjectId")
+    public JSONObject getUserListByProjectId(HttpServletRequest request, String projectId){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            List<JSONObject> userList = userService.getUserListByProjectId(projectId);
+            jsonObject.put("info", userList);
+        }else{
+            jsonObject.put("isLogin",false);
+            jsonObject.put("info", null);
         }
         return jsonObject;
     }

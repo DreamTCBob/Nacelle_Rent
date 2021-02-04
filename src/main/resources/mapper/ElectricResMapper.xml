@@ -42,9 +42,27 @@
         WHERE project_builders = #{userId}
     </delete>
 
+    <delete id="deleteWorkBoxByDeviceId">
+        DELETE FROM electricbox_res
+        WHERE device_id = #{deviceId}
+    </delete>
+
     <update id="updateWorker">
         UPDATE electricbox_res
         SET project_builders = #{projectBuilders}
         WHERE device_id= #{deviceId}
     </update>
+
+    <select id="getElectricResInfo" resultMap="electricResResultMap">
+        SELECT *
+        FROM electricbox_res
+        <where>
+            <if test = "userId != null" >
+                AND project_builders = #{userId}
+            </if>
+            <if test = "deviceId != null" >
+                AND device_id = #{deviceId}
+            </if>
+        </where>
+    </select>
 </mapper>

@@ -125,4 +125,21 @@ public class ElectricBoxController {
         return jsonObject;
     }
 
+    @ApiOperation(value = "获取吊篮实时工作信息" ,  notes="")
+    @GetMapping("/getElectricResInfo")
+    public JSONObject getElectricResInfo(HttpServletRequest request, @RequestParam(required = false) String deviceId,
+                                         @RequestParam(required = false) String userId){
+        JSONObject jsonObject=new JSONObject();
+        String password = request.getHeader("Authorization");
+        int flag = (int)UserCheckUtil.checkUser("", password, null).get("result");
+        if(flag == 1){
+            jsonObject.put("isLogin",true);
+            List<JSONObject> result = electricBoxService.getElectricResInfo(deviceId, userId);
+            jsonObject.put("result", result);
+        }else{
+            jsonObject.put("isLogin",false);
+        }
+        return jsonObject;
+    }
+
 }

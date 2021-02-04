@@ -10,15 +10,15 @@ import com.manager.nacelle_rent.service.ProjectService;
 import com.manager.nacelle_rent.service.RedisService;
 import com.manager.nacelle_rent.service.UserService;
 import com.manager.nacelle_rent.service.WorkTimeLogService;
-import com.manager.nacelle_rent.utils.DateUtil;
-import com.manager.nacelle_rent.utils.PageQueryUtil;
-import com.manager.nacelle_rent.utils.RedisUtil;
+import com.manager.nacelle_rent.utils.*;
 import com.xiaomi.xmpush.server.Constants;
 import com.xiaomi.xmpush.server.Message;
 import com.xiaomi.xmpush.server.Sender;
+import io.swagger.models.auth.In;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPReply;
+import org.json.simple.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -27,10 +27,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ProjectServiceImpl implements ProjectService{
@@ -66,6 +68,8 @@ public class ProjectServiceImpl implements ProjectService{
     private ConfigurationList configurationList;
     @Autowired
     private RedisService redisService;
+    @Autowired
+    private WorkTimeLogMapper workTimeLogMapper;
 
     @Value("${FTPFileURL}")
     private String FTPFileURL;
@@ -129,6 +133,19 @@ public class ProjectServiceImpl implements ProjectService{
             }
         }
         return projectList;
+    }
+
+    @Override
+    public List<String> getDevice(String subString){
+        return projectMapper.getDevice(subString);
+    }
+
+    @Override
+    public List<String> getSiteNoList(String deviceId, String projectId){
+        List<String> strings = projectMapper.getSiteNoList(deviceId, projectId);
+        List<String> siteNoList = strings.stream().distinct().collect(Collectors.toList());
+        siteNoList.remove("");
+        return siteNoList;
     }
 
     @Override
@@ -726,6 +743,12 @@ public class ProjectServiceImpl implements ProjectService{
             }
             String projectName = projectMapper.getProjectName(project);
             jsonObject.put("projectName", projectName);
+            String worker = jsonObject.getString("worker");
+            if (StringUtils.isBlank(worker)) {
+                continue;
+            }
+            String workerName = userMapper.getUserName(worker);
+            jsonObject.put("workerName", workerName);
             jsonObject.put("pageInfo", pageQueryUtil);
             jsonObjects.add(jsonObject);
         }
@@ -862,8 +885,13 @@ public class ProjectServiceImpl implements ProjectService{
     public boolean beginWork(String projectId, String userId, String boxId){
         String userList = getWorkerList(projectId);
         String boxList = getBasketList(projectId);
-        if(electricResMapper.getElectricBoxState(userId) != null) return false;//判断工人是否在工作
-        if(electricResMapper.getDevice(boxId).size() > 1) return false;//每个吊篮最多有两个人
+        if (electricBoxMapper.getRealTimeDataById(boxId) != null) {
+            if (electricBoxMapper.getRealTimeDataById(boxId).getBketStat() == 0) {
+                electricResMapper.deleteWorkBoxByDeviceId(boxId);
+            }
+        }
+        if (electricResMapper.getElectricBoxState(userId) != null) return false;//判断工人是否在工作
+        if (electricResMapper.getDevice(boxId).size() > 1) return false;//每个吊篮最多有两个人
         String[] box = boxList.split(",");
         int flag = 0;
         for(String s : box){
@@ -903,6 +931,29 @@ public class ProjectServiceImpl implements ProjectService{
         }
         else return false;
     }
+
+    @Override
+    public boolean judgeAndroidBeginWork(String projectId, String userId, String boxId){
+        String userList = getWorkerList(projectId);
+        String boxList = getBasketList(projectId);
+        if (electricResMapper.getElectricBoxState(userId) != null) return false;//判断工人是否在工作
+        if (electricResMapper.getDevice(boxId).size() > 1) return false;//每个吊篮最多有两个人
+        String[] box = boxList.split(",");
+        int flag = 0;
+        for(String s : box){
+            if(s.equals(boxId))
+                flag = 1;
+        }
+//        String userNow;
+//        if(electricResMapper.getDevice(boxId)!=null)
+//            userNow = electricResMapper.getDevice(boxId).getProjectBuilders();
+//        else userNow = "";
+//        String[] userUpdate;
+        if(!userList.contains(userId) || flag == 0){
+            return false;
+        }
+        return true;
+    }
     @Override
     public boolean endWork(String projectId, String userId, String boxId){
         if(electricResMapper.getElectricBoxState(userId) == null || !electricResMapper.getElectricBoxState(userId).getDeviceId().equals(boxId)) return false;
@@ -924,9 +975,12 @@ public class ProjectServiceImpl implements ProjectService{
         if(boxList.contains(boxId)){
             try {
                 electricResMapper.deleteWorkBox(userId);
-                if(electricResMapper.getDevice(boxId).size() == 0)
+                String siteNo = electricStateMapper.getSiteNo(boxId);
+                if(electricResMapper.getDevice(boxId).size() == 0) {
                     electricStateMapper.updateWorkState(boxId, 0);
-                workTimeLogService.createWorkTimeLog(userId, projectId, boxId, hour, timeStart);
+                    workTimeLogMapper.createNacelleWorkTimeLog(projectId, boxId, hour+1, timeStart, siteNo);
+                }
+                workTimeLogService.createWorkTimeLog(userId, projectId, boxId, hour+1, timeStart, siteNo);
                 return true;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -1302,6 +1356,7 @@ public class ProjectServiceImpl implements ProjectService{
             ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
             ftp.makeDirectory(FTPPlaneGraph + projectId + "/");
             ftp.changeWorkingDirectory(FTPPlaneGraph + projectId + "/");
+            ftp.enterLocalPassiveMode();
             ftp.storeFile(fileName,file);
             file.close();
             ftp.logout();
@@ -1329,19 +1384,27 @@ public class ProjectServiceImpl implements ProjectService{
             ftp.connect(FTPFileURL,21);
             ftp.login(FTPUserName,FTPUserPassword);
             reply = ftp.getReplyCode();
+            System.out.println(reply);
             if(!FTPReply.isPositiveCompletion(reply)){
                 ftp.disconnect();
                 return 0;
             }
-            ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
-            ftp.makeDirectory(FTPPlaneGraph + projectId + "/");
-            ftp.changeWorkingDirectory(FTPPlaneGraph + projectId + "/");
-            ftp.storeFile(fileName,file);
+            boolean set = ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
+            ftp.setControlEncoding("GBK");
+            System.out.println("set: " + set);
+            boolean make = ftp.makeDirectory(FTPPlaneGraph + projectId + "/");
+            System.out.println("make: " + make);
+            boolean change = ftp.changeWorkingDirectory(FTPPlaneGraph + projectId + "/");
+            System.out.println("change: " + change);
+            ftp.enterLocalPassiveMode();
+            boolean f = ftp.storeFile(fileName,file);
+            System.out.println("store file: " + f);
             file.close();
             ftp.logout();
             projectMapper.updateProjectContractUrl(projectId, fileName);
             return 1;
         }catch (IOException ex){
+            ex.printStackTrace();
             return 0;
         }finally {
             if(ftp.isConnected()){
@@ -1810,5 +1873,228 @@ public class ProjectServiceImpl implements ProjectService{
             projectMapper.decreaseBox(projectId);
         }
         return true;
+    }
+
+    @Override
+    public JSONObject getSingleWorkerReport(String projectId, String userId, String startTime, String endTime, int type) {
+        JSONObject allInfo = new JSONObject();
+        User user = userMapper.getUserInfo(userId);
+        String userRole = user.getUserRole();
+        user.setUserRole(WorkerRoleUtils.roleMap.get(userRole));
+        allInfo.put("workerInfo", user);
+        String projectName = projectMapper.getProjectName(projectId);
+        allInfo.put("projectName", projectName);
+        List<JSONObject> list = new ArrayList<>();
+        switch (type) {
+            case 1:
+                List<String> dateList = getTwoDaysDay(startTime, endTime);
+                for (String time : dateList) {
+                    JSONObject oneDay = new JSONObject();
+                    //一天的工时
+                    Integer workTime = projectMapper.getWorkTimeOneDay(time, userId, projectId);
+                    oneDay.put("workTime", workTime == null ? 0 : workTime);
+                    if (workTime == null) continue;
+                    oneDay.put("date", time);
+                    //详细的记录
+                    List<Map<String, Object>> oneDayList = projectMapper.getWorkerOneDayInfo(time, userId, projectId);
+                    List<JSONObject> oneDayInfo = new ArrayList<>();
+                    for (Map<String, Object> map : oneDayList) {
+                        JSONObject jsonObject = new JSONObject(map);
+                        String siteNo = electricStateMapper.getSiteNo(jsonObject.getString("device_id"));
+                        jsonObject.put("siteNo", siteNo);
+                        oneDayInfo.add(jsonObject);
+                    }
+                    oneDay.put("thisDayInfo", oneDayInfo);
+                    list.add(oneDay);
+                }
+                allInfo.put("listInfo", list);
+                break;
+            case 2://自定义时间
+                Integer workTime = projectMapper.getWorkTimeAll(startTime, endTime, userId, projectId);
+                allInfo.put("workTime", workTime);
+                List<Map<String, Object>> oneDayList = projectMapper.getWorkerWorkInfo(startTime, endTime, userId, projectId);
+                List<JSONObject> info = new ArrayList<>();
+                for (Map<String, Object> map : oneDayList) {
+                    JSONObject jsonObject = new JSONObject(map);
+                    String siteNo = electricStateMapper.getSiteNo(jsonObject.getString("device_id"));
+                    jsonObject.put("siteNo", siteNo);
+                    info.add(jsonObject);
+                }
+                allInfo.put("info", info);
+                break;
+        }
+        return allInfo;
+    }
+    private List<String> getTwoDaysDay(String dateStart, String dateEnd) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        List<String> dateList = new ArrayList<String>();
+        try{
+            Date dateOne = sdf.parse(dateStart);
+            Date dateTwo = sdf.parse(dateEnd);
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(dateTwo);
+
+            dateList.add(dateEnd);
+            while(calendar.getTime().after(dateOne)){ //倒序时间,顺序after改before其他相应的改动。
+                calendar.add(Calendar.DAY_OF_MONTH, -1);
+                dateList.add(sdf.format(calendar.getTime()));
+            }
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+        return dateList;
+    }
+
+    @Override
+    public JSONObject getSingleNacelleReport(String projectId, String deviceId, String siteNo, String startTime, String endTime, int type) {
+        JSONObject singleNacelleReport = new JSONObject();
+        String projectName = projectMapper.getProjectName(projectId);
+        singleNacelleReport.put("projectName", projectName);
+        List<JSONObject> list = new ArrayList<>();
+        switch (type) {
+            case 1:
+                List<String> dateList = getTwoDaysDay(startTime, endTime);
+                for (String time : dateList) {
+                    JSONObject oneDay = new JSONObject();
+                    //一天的工时
+                    Integer workTime = projectMapper.getNacelleWorkTimeOnDay(time, deviceId, siteNo, projectId);
+                    oneDay.put("workTime", workTime == null ? 0 : workTime);
+                    if (workTime == null) continue;
+                    oneDay.put("date", time);
+                    //详细的记录
+                    List<Map<String, Object>> oneDayList = projectMapper.getNacelleWorkOneDayInfo(time, deviceId, siteNo, projectId);
+                    List<JSONObject> oneDayInfo = new ArrayList<>();
+                    for (Map<String, Object> map : oneDayList) {
+                        JSONObject jsonObject = new JSONObject(map);
+//                        Integer workTimeWorker = projectMapper.getWorkTimeOneWorker(time, projectId, deviceId, siteNo);
+//                        jsonObject.put("workTimeWorker", workTimeWorker);
+                        String start = removeEightHours(jsonObject.getString("start_time"));
+                        String end = removeEightHours(jsonObject.getString("end_time"));
+                        if (StringUtils.isBlank(start)|| StringUtils.isBlank(end)) continue;
+                        List<JSONObject> jsonObjectList = new ArrayList<>();
+                        List<Map<String, Object>> workerDetail = projectMapper.getNacelleWorkerDetail(projectId, deviceId, siteNo, start, end);
+                        for (Map<String, Object> m : workerDetail) {
+                            JSONObject workerJson = new JSONObject(m);
+                            User workerInfo = userMapper.getUserInfo(workerJson.getString("user_id"));
+                            String userRole = workerInfo.getUserRole();
+                            workerInfo.setUserRole(WorkerRoleUtils.roleMap.get(userRole));
+                            workerJson.put("workerInfo", workerInfo);
+                            jsonObjectList.add(workerJson);
+                        }
+                        jsonObject.put("workDetail", jsonObjectList);
+                        oneDayInfo.add(jsonObject);
+                    }
+                    oneDay.put("thisDayInfo", oneDayInfo);
+                    list.add(oneDay);
+                }
+                singleNacelleReport.put("listInfo", list);
+                break;
+            case 2:
+                Integer workTimeAll = projectMapper.getNacelleWorkTimeAll(startTime, endTime, deviceId, siteNo, projectId);
+                singleNacelleReport.put("workTimeAll", workTimeAll);
+                if (workTimeAll == null) return null;
+                //详细的记录
+                List<JSONObject> nacelleWorkLog = new ArrayList<>();
+                List<Map<String, Object>> nacelleWorkLogAll = projectMapper.getNacelleWorkLogAll(startTime, endTime, deviceId, siteNo, projectId);
+                for (Map<String, Object> map : nacelleWorkLogAll) {
+                    JSONObject jsonObject = new JSONObject(map);
+                    String start = removeEightHours(jsonObject.getString("start_time"));
+                    String end = removeEightHours(jsonObject.getString("end_time"));
+                    if (StringUtils.isBlank(start)|| StringUtils.isBlank(end)) continue;
+                    List<JSONObject> jsonObjectList = new ArrayList<>();
+                    List<Map<String, Object>> workerDetail = projectMapper.getNacelleWorkerDetail(projectId, deviceId, siteNo, start, end);
+                    for (Map<String, Object> m : workerDetail) {
+                        JSONObject workerJson = new JSONObject(m);
+                        User workerInfo = userMapper.getUserInfo(workerJson.getString("user_id"));
+                        String userRole = workerInfo.getUserRole();
+                        workerInfo.setUserRole(WorkerRoleUtils.roleMap.get(userRole));
+                        workerJson.put("workerInfo", workerInfo);
+                        jsonObjectList.add(workerJson);
+                    }
+                    jsonObject.put("workDetail", jsonObjectList);
+                    nacelleWorkLog.add(jsonObject);
+                }
+                singleNacelleReport.put("nacelleWorkLog", nacelleWorkLog);
+        }
+        return singleNacelleReport;
+    }
+
+    @Override
+    public JSONObject getWorkerUseNacelleReport(String projectId, String startTime, String endTime) {
+        JSONObject workerUseNacelleReport = new JSONObject();
+        String projectName = projectMapper.getProjectName(projectId);
+        workerUseNacelleReport.put("projectName", projectName);
+        List<String> workerList = projectMapper.getWorkersFromWorkLog(projectId, startTime, endTime);
+        List<String> singleWorkerList = workerList.stream().distinct().collect(Collectors.toList());//去重
+        singleWorkerList.remove("");
+        Map<JSONObject, Integer> jsonObjectMap = new HashMap<>();
+        for (String worker : singleWorkerList) {
+            JSONObject jsonObject = new JSONObject();
+            int workTime = projectMapper.getWorkTimeAll(startTime, endTime, worker, projectId);
+            User workerInfo = userMapper.getUserInfo(worker);
+            String userRole = workerInfo.getUserRole();
+            workerInfo.setUserRole(WorkerRoleUtils.roleMap.get(userRole));
+            jsonObject.put("workerTime", workTime);
+            jsonObject.put("workerInfo", workerInfo);
+            jsonObjectMap.put(jsonObject, workTime);
+        }
+        Map<JSONObject, Integer> result = new LinkedHashMap<>();
+        jsonObjectMap.entrySet()
+                .stream()
+                .sorted((p1, p2) -> p2.getValue().compareTo(p1.getValue()))
+                .collect(Collectors.toList()).forEach(ele -> result.put(ele.getKey(), ele.getValue()));
+        workerUseNacelleReport.put("workerUseNacelleReport", result);
+        return workerUseNacelleReport;
+    }
+    private String removeEightHours(String time) {
+//        String[] strings = time.split(".");
+//        String timeAfter = strings[0];
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        try {
+            Date d = sd.parse(time);
+            long afterTime = (long)(d.getTime() - 8*60*60*1000);
+            Date right = new Date(afterTime);
+            return sd.format(right);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
+    @Override
+    public JSONObject getNacelleWorkEfficiency(String projectId, String startTime, String endTime, Integer standard, Integer days) {
+        if (standard == null) standard = 8;
+        JSONObject nacelleWorkEfficiency = new JSONObject();
+        String projectName = projectMapper.getProjectName(projectId);
+        nacelleWorkEfficiency.put("projectName", projectName);
+        List<String> deviceList = projectMapper.getDeviceWorkList(projectId, startTime, endTime);
+        List<String> stringList = deviceList.stream().distinct().collect(Collectors.toList());
+        stringList.remove("");
+        Map<JSONObject, Integer> nacelleWorkList = new HashMap<>();
+        for (String deviceId : stringList) {
+            JSONObject oneDevice = new JSONObject();
+            oneDevice.put("deviceId", deviceId);
+            String siteNo = electricStateMapper.getSiteNo(deviceId);
+            oneDevice.put("siteNo", siteNo);
+            int workTime = projectMapper.getDeviceWorkTime(startTime, endTime, deviceId, projectId);
+            oneDevice.put("workTime", workTime);
+            int standardAll = standard * days * 60;
+            DecimalFormat df=new DecimalFormat("0.000");
+            String s = df.format((float) workTime/standardAll);
+            float f = Float.valueOf(s);
+            String fString = String.valueOf(f * 100);
+            int index = fString.indexOf(".");
+            String result = fString.substring(0, index + 2) + "%";
+            oneDevice.put("efficiency", result);
+            nacelleWorkList.put(oneDevice, workTime);
+        }
+        Map<JSONObject, Integer> result = new LinkedHashMap<>();
+        nacelleWorkList.entrySet()
+                .stream()
+                .sorted((p1, p2) -> p2.getValue().compareTo(p1.getValue()))
+                .collect(Collectors.toList()).forEach(ele -> result.put(ele.getKey(), ele.getValue()));
+        nacelleWorkEfficiency.put("nacelleWorkList", result);
+        return nacelleWorkEfficiency;
     }
 }
